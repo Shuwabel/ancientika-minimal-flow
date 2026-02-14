@@ -66,7 +66,7 @@ export default function Header() {
 
         <Link to="/" className="flex items-center gap-1.5">
           <img src={mochaLogo} alt="Ancientika" className="h-8" />
-          <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>Ancientika</span>
+          <span className="text-foreground text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
         </Link>
 
         <div className="flex items-center gap-3">

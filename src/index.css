@@ -106,12 +106,12 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'PorshaRichela', cursive;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'PorshaRichela', cursive;
     font-weight: 500;
     letter-spacing: -0.02em;
   }

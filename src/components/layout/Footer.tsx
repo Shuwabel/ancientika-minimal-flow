@@ -51,7 +51,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-6 border-t border-border text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Ancientika. All rights reserved.
+            © {new Date().getFullYear()} ancientika. All rights reserved.
           </p>
         </div>
       </div>
