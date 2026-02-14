@@ -1,48 +1,119 @@
 
 
-# Restore Hamburger Menu + Fix Tablet Spacing
+# Shopify Integration Plan
 
-## Two Changes
+## Overview
+Replace all mock product data with real Shopify Storefront API integration, and replace the current React Context cart with a Zustand-based cart that syncs with Shopify's checkout system.
 
-### 1. Hamburger Menu with Context-Aware Sidebar (`Header.tsx`)
+## What Changes
 
-Restore the hamburger menu button on the left side of the header. The inline nav links currently in the header bar will be removed and moved into a sidebar (Sheet) that slides in from the left.
+### 1. Shopify API Layer (new file)
+Create `src/lib/shopify.ts` with:
+- Store domain and storefront token constants
+- `storefrontApiRequest()` helper for all GraphQL calls
+- Product fetching query and types (`ShopifyProduct` interface)
+- Cart mutations (create, add line, update line, remove line)
+- Cart helper functions with proper error handling
+- `formatCheckoutUrl()` with `channel=online_store` param
 
-**Header bar layout:**
-- Left: Hamburger icon (Menu from lucide-react) -- always visible on all screen sizes
-- Center: Ancientika logo
-- Right: Search + Cart icons
+### 2. Zustand Cart Store (new file, replaces React Context)
+Create `src/stores/cartStore.ts` using Zustand with persist middleware:
+- Replaces `src/lib/cart-context.tsx` entirely
+- CartItem type uses Shopify variant IDs and line IDs
+- `addItem` creates a Shopify cart on first add, then adds lines
+- `updateQuantity` and `removeItem` sync with Shopify in real-time
+- `syncCart` checks if cart still exists (for post-checkout cleanup)
+- Persists cart state to localStorage
 
-**Sidebar behavior (context-aware):**
-- On Home page (`/`): Shows only "Shop" link
-- On Shop page (`/shop`): Shows "Home" link, then "Shop" with an expandable list of categories (All, Tops, Bottoms, Outerwear, Accessories)
-- Clicking any link navigates and closes the sidebar
-- Uses Sheet component (already exists) sliding from left
-- For the categories list on the shop page, use a simple collapsible toggle with `ChevronDown` icon and state
+### 3. Cart Sync Hook (new file)
+Create `src/hooks/useCartSync.ts`:
+- Syncs cart on page load and when tab becomes visible
+- Clears cart automatically after checkout completion
 
-### 2. Fix Tablet Empty Space (`Index.tsx`)
+### 4. Updated Components
 
-The hero section currently uses `min-h-[85vh]` which creates excessive whitespace below the featured products on tablet viewports. Fix by removing the fixed min-height and letting the content define the section height naturally.
+**`src/components/layout/Header.tsx`**
+- Replace `useCart()` context with `useCartStore` from Zustand
+- Cart badge reads from Zustand store
 
-- Change `min-h-[85vh]` to just remove it or use a smaller value
-- Reduce top padding on tablet to tighten the layout
-- Reduce the gap between hero content and featured grid (`mt-12 md:mt-16` to `mt-8 md:mt-12`)
-- Reduce bottom padding on the hero section
+**`src/components/layout/CartDrawer.tsx`**
+- Rewrite to use Zustand cart store
+- Show product images from Shopify
+- Checkout button opens Shopify checkout URL in new tab via `window.open`
+- Loading states during cart operations
+
+**`src/components/ProductCard.tsx`**
+- Accept `ShopifyProduct` instead of mock `Product`
+- Display Shopify image, title, price, currency
+- Quick-add uses first available variant
+- Links to `/product/[handle]` instead of `/product/[id]`
+
+**`src/pages/Shop.tsx`**
+- Fetch products from Shopify Storefront API using React Query
+- Show loading skeleton while fetching
+- Show "No products found" with empty state if store has no products
+- Keep search/filter UI (filter client-side on fetched products)
+
+**`src/pages/Index.tsx`**
+- Fetch products from Shopify for Featured section
+- Show first 4 products as featured
+- On Sale section shows products with compareAtPrice
+- Handle empty state gracefully (no products yet)
+
+**`src/pages/ProductDetail.tsx`**
+- Change route to use `handle` param instead of `id`
+- Fetch single product by handle from Shopify Storefront API
+- Display variant options (size, color) from Shopify data
+- Add to cart uses Zustand store with real variant IDs
+
+**`src/App.tsx`**
+- Remove `CartProvider` wrapper (no longer needed)
+- Remove `cart-context` import
+- Add `useCartSync()` hook call
+- Update product detail route to `/product/:handle`
+
+### 5. Files to Remove/Deprecate
+- `src/lib/cart-context.tsx` -- replaced by Zustand store
+- `src/lib/mock-data.ts` -- no longer needed for products (keep `collections` array for category navigation in sidebar)
+
+### 6. Install Dependency
+- Add `zustand` package for state management
 
 ---
 
 ## Technical Details
 
-### `src/components/layout/Header.tsx`
-- Import `Menu` from lucide-react, `Sheet`/`SheetContent`/`SheetTrigger`/`SheetTitle` from `@/components/ui/sheet`
-- Add `useState` for sheet open state and a separate state for categories expanded toggle
-- Remove the inline `<nav>` block (lines 27-69)
-- Add Sheet with Menu trigger button on the left side of the header
-- Inside SheetContent (side="left"): render context-aware nav with warm brown styling
-- Use `useLocation` (already imported) to detect route, `useNavigate` (already imported) for category navigation
-- Close sheet on any link click by setting open state to false
+### Shopify Constants
+```
+Store: yuy445-k9.myshopify.com
+API Version: 2025-07
+Storefront Token: cf398fb675e7cc0fe2278fc48bedf71b
+```
 
-### `src/pages/Index.tsx`
-- Line 31: Change `min-h-[85vh]` to remove it entirely, letting content flow naturally
-- Adjust spacing: reduce `pt-20 md:pt-28` to `pt-16 md:pt-24` and `mt-12 md:mt-16` to `mt-8 md:mt-12`
+### Route Change
+- `/product/:id` becomes `/product/:handle` (Shopify uses handles for product URLs)
+
+### Product Flow
+1. Pages fetch products via `storefrontApiRequest()` with GraphQL queries
+2. Products include images, variants, options, prices from Shopify
+3. "Add to Cart" creates/updates a real Shopify cart via Storefront API
+4. "Checkout" opens Shopify-hosted checkout in new tab
+
+### Empty Store Handling
+Since the store currently has 0 products, the UI will show "No products found" messages. The user can create products by chatting (e.g., "Create a linen tee priced at $89").
+
+### Files Modified
+- `src/App.tsx` -- remove CartProvider, add useCartSync, update route
+- `src/components/layout/Header.tsx` -- use Zustand store
+- `src/components/layout/CartDrawer.tsx` -- rewrite for Shopify cart
+- `src/components/ProductCard.tsx` -- accept ShopifyProduct type
+- `src/pages/Index.tsx` -- fetch from Shopify API
+- `src/pages/Shop.tsx` -- fetch from Shopify API
+- `src/pages/ProductDetail.tsx` -- fetch by handle from Shopify API
+- `src/lib/mock-data.ts` -- keep only collections array
+
+### New Files
+- `src/lib/shopify.ts` -- API layer, types, cart mutations
+- `src/stores/cartStore.ts` -- Zustand cart store
+- `src/hooks/useCartSync.ts` -- cart sync hook
 
