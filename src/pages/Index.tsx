@@ -51,7 +51,7 @@ export default function Index() {
           className="relative text-center px-6 max-w-2xl mx-auto"
         >
           <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
-          <h1 className="font-display text-5xl md:text-7xl mb-4">Ancientika</h1>
+          <h1 className="font-display text-5xl md:text-7xl mb-4">ancientika</h1>
           <p className="font-bold text-xl md:text-2xl mb-8 tracking-wide">
             Your presence, refined.
           </p>
