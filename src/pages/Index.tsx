@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import mainLogo from "@/assets/ANCIENTIKA_MAIN_LOGO.png";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { mockProducts, collections } from "@/lib/mock-data";
@@ -23,6 +24,7 @@ export default function Index() {
           transition={{ duration: 0.8 }}
           className="relative text-center px-6 max-w-2xl"
         >
+          <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
           <h1 className="font-display text-5xl md:text-7xl mb-4">Ancientika</h1>
           <p className="text-muted-foreground text-lg md:text-xl mb-8 tracking-wide">
             Premium, defined by less.
