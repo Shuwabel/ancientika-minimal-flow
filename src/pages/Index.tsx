@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import mainLogo from "@/assets/ANCIENTIKA_MAIN_LOGO.png";
+import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { collections } from "@/lib/mock-data";
 import { fetchProducts } from "@/lib/shopify";
 import { Skeleton } from "@/components/ui/skeleton";
+import collectionsBg from "@/assets/collections-bg.jpg";
 import { useState } from "react";
 
 export default function Index() {
@@ -50,8 +51,8 @@ export default function Index() {
         >
           <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
           <h1 className="font-display text-5xl md:text-7xl mb-4">Ancientika</h1>
-          <p className="text-muted-foreground text-lg md:text-xl mb-8 tracking-wide">
-            Premium, defined by less.
+          <p className="font-bold text-xl md:text-2xl mb-8 tracking-wide">
+            Your presence, refined.
           </p>
           <Button asChild size="lg" className="uppercase tracking-[0.15em]">
             <Link to="/shop">
@@ -88,20 +89,24 @@ export default function Index() {
       </section>
 
       {/* Collections Grid */}
-      <section className="container py-20">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {collections.map((col, i) => (
-            <motion.div key={col.slug} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <Link to={`/shop?category=${col.slug}`} className="block aspect-[3/4] bg-muted rounded-sm relative group overflow-hidden">
-                <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-sm font-medium">{col.name}</p>
-                  <p className="text-xs text-muted-foreground">{col.description}</p>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+      <section className="relative py-20 overflow-hidden">
+        <img src={collectionsBg} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
+        <div className="absolute inset-0 bg-background/70" />
+        <div className="container relative">
+          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {collections.map((col, i) => (
+              <motion.div key={col.slug} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                <Link to={`/shop?category=${col.slug}`} className="block aspect-[3/4] bg-card/80 backdrop-blur-sm rounded-sm relative group overflow-hidden border border-border/50">
+                  <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <p className="text-sm font-medium">{col.name}</p>
+                    <p className="text-xs text-muted-foreground">{col.description}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 

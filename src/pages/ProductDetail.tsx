@@ -109,8 +109,8 @@ export default function ProductDetail() {
 
           <h1 className="text-2xl md:text-3xl font-light mb-2">{product.title}</h1>
           <div className="flex items-center gap-3 mb-6">
-            <p className="text-xl">{currency === 'USD' ? '$' : currency}{price.toFixed(2)}</p>
-            {isOnSale && <p className="text-sm text-muted-foreground line-through">${compareAt!.toFixed(2)}</p>}
+            <p className="text-xl">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{price.toFixed(2)}</p>
+            {isOnSale && <p className="text-sm text-muted-foreground line-through">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{compareAt!.toFixed(2)}</p>}
           </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed mb-8">{product.description}</p>
