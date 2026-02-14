@@ -1,21 +1,53 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Product } from "@/lib/mock-data";
-import { useCart } from "@/lib/cart-context";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Loader2 } from "lucide-react";
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product }: { product: ShopifyProduct }) {
   const [hovered, setHovered] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
-  const { addItem } = useCart();
-  const isOnSale = !!product.compareAtPrice;
-  const discount = isOnSale
-    ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
-    : 0;
+  const { addItem, isLoading } = useCartStore();
+  const node = product.node;
+
+  const price = parseFloat(node.priceRange.minVariantPrice.amount);
+  const currency = node.priceRange.minVariantPrice.currencyCode;
+  const compareAt = node.compareAtPriceRange?.minVariantPrice?.amount
+    ? parseFloat(node.compareAtPriceRange.minVariantPrice.amount)
+    : null;
+  const isOnSale = compareAt != null && compareAt > price;
+  const discount = isOnSale ? Math.round(((compareAt! - price) / compareAt!) * 100) : 0;
+  const imageUrl = node.images.edges[0]?.node.url;
+  const firstVariant = node.variants.edges[0]?.node;
+
+  // Variant selection state for quick-view
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+    const defaults: Record<string, string> = {};
+    node.options.forEach(opt => { defaults[opt.name] = opt.values[0]; });
+    return defaults;
+  });
+
+  const getSelectedVariant = () => {
+    return node.variants.edges.find(v =>
+      v.node.selectedOptions.every(so => selectedOptions[so.name] === so.value)
+    )?.node || firstVariant;
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const variant = getSelectedVariant();
+    if (!variant) return;
+    await addItem({
+      product,
+      variantId: variant.id,
+      variantTitle: variant.title,
+      price: variant.price,
+      quantity: 1,
+      selectedOptions: variant.selectedOptions,
+    });
+  };
 
   return (
     <div
@@ -23,47 +55,40 @@ export default function ProductCard({ product }: { product: Product }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Base Card */}
-      <Link to={`/product/${product.id}`} className="block">
+      <Link to={`/product/${node.handle}`} className="block">
         <div className="aspect-[3/4] bg-muted rounded-sm overflow-hidden relative">
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          {/* Badges */}
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={node.images.edges[0]?.node.altText || node.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No image</div>
+          )}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {isOnSale && (
-              <Badge className="bg-accent text-accent-foreground text-[10px] rounded-sm">
-                -{discount}%
-              </Badge>
+              <Badge className="bg-accent text-accent-foreground text-[10px] rounded-sm">-{discount}%</Badge>
             )}
-            {!product.inStock && (
-              <Badge variant="secondary" className="text-[10px] rounded-sm">
-                Sold Out
-              </Badge>
-            )}
-            {product.inStock && product.stockCount <= 5 && (
-              <Badge variant="outline" className="text-[10px] rounded-sm bg-background/80">
-                Only {product.stockCount} left
-              </Badge>
+            {!node.availableForSale && (
+              <Badge variant="secondary" className="text-[10px] rounded-sm">Sold Out</Badge>
             )}
           </div>
         </div>
         <div className="mt-3 space-y-1">
-          <p className="text-sm font-medium">{product.name}</p>
+          <p className="text-sm font-medium">{node.title}</p>
           <div className="flex items-center gap-2">
-            <p className="text-sm">${product.price}</p>
+            <p className="text-sm">{currency === 'USD' ? '$' : currency}{price.toFixed(2)}</p>
             {isOnSale && (
-              <p className="text-xs text-muted-foreground line-through">${product.compareAtPrice}</p>
+              <p className="text-xs text-muted-foreground line-through">${compareAt!.toFixed(2)}</p>
             )}
           </div>
         </div>
       </Link>
 
-      {/* Quick-View Overlay on Hover */}
+      {/* Quick-View Overlay */}
       <AnimatePresence>
-        {hovered && product.inStock && (
+        {hovered && node.availableForSale && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -72,66 +97,41 @@ export default function ProductCard({ product }: { product: Product }) {
             className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border border-border rounded-sm p-4 shadow-lg z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Size Selector */}
-            <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
-                Size
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedSize(size);
-                    }}
-                    className={`h-7 min-w-[2rem] px-2 text-[11px] border rounded-sm transition-colors ${
-                      selectedSize === size
-                        ? "border-foreground bg-primary text-primary-foreground"
-                        : "border-border hover:border-foreground"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {node.options
+              .filter(opt => !(opt.name === "Title" && opt.values.length === 1 && opt.values[0] === "Default Title"))
+              .map(opt => (
+                <div key={opt.name} className="mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
+                    {opt.name} — {selectedOptions[opt.name]}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {opt.values.map(val => (
+                      <button
+                        key={val}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedOptions(prev => ({ ...prev, [opt.name]: val }));
+                        }}
+                        className={`h-7 min-w-[2rem] px-2 text-[11px] border rounded-sm transition-colors ${
+                          selectedOptions[opt.name] === val
+                            ? "border-foreground bg-primary text-primary-foreground"
+                            : "border-border hover:border-foreground"
+                        }`}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
-            {/* Color Selector */}
-            <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
-                Color — {selectedColor.name}
-              </p>
-              <div className="flex gap-1.5">
-                {product.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedColor(color);
-                    }}
-                    className={`h-5 w-5 rounded-full border-2 transition-all ${
-                      selectedColor.name === color.name
-                        ? "border-foreground scale-110"
-                        : "border-transparent hover:border-muted-foreground"
-                    }`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Add to Cart */}
             <Button
               size="sm"
               className="w-full uppercase tracking-[0.1em] text-xs gap-2"
-              onClick={(e) => {
-                e.preventDefault();
-                addItem(product, selectedSize, selectedColor.name);
-              }}
+              disabled={isLoading}
+              onClick={handleAddToCart}
             >
-              <ShoppingBag className="h-3.5 w-3.5" />
+              {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingBag className="h-3.5 w-3.5" />}
               Add to Cart
             </Button>
           </motion.div>

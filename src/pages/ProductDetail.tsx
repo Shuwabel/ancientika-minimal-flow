@@ -1,181 +1,169 @@
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockProducts } from "@/lib/mock-data";
-import { useCart } from "@/lib/cart-context";
+import { Skeleton } from "@/components/ui/skeleton";
+import { fetchProductByHandle, fetchProducts } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
 import ProductCard from "@/components/ProductCard";
 
 export default function ProductDetail() {
-  const { id } = useParams();
-  const product = mockProducts.find((p) => p.id === id);
-  const { addItem } = useCart();
-  const [selectedSize, setSelectedSize] = useState(product?.sizes[0] || "");
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0]);
+  const { handle } = useParams();
+  const { addItem, isLoading: cartLoading } = useCartStore();
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['shopify-product', handle],
+    queryFn: () => fetchProductByHandle(handle!),
+    enabled: !!handle,
+  });
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['shopify-products'],
+    queryFn: () => fetchProducts(50),
+  });
+
+  // Initialize selected options when product loads
+  if (product && Object.keys(selectedOptions).length === 0 && product.options.length > 0) {
+    const defaults: Record<string, string> = {};
+    product.options.forEach(opt => { defaults[opt.name] = opt.values[0]; });
+    setSelectedOptions(defaults);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container py-8">
+        <Skeleton className="h-4 w-32 mb-8" />
+        <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
+          <Skeleton className="aspect-[3/4] w-full rounded-sm" />
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
       <div className="container py-20 text-center">
         <p className="text-muted-foreground">Product not found</p>
-        <Link to="/shop" className="text-sm underline mt-4 inline-block">
-          Back to shop
-        </Link>
+        <Link to="/shop" className="text-sm underline mt-4 inline-block">Back to shop</Link>
       </div>
     );
   }
 
-  const related = mockProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-  const isOnSale = !!product.compareAtPrice;
+  const price = parseFloat(product.priceRange.minVariantPrice.amount);
+  const compareAt = product.compareAtPriceRange?.minVariantPrice?.amount
+    ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount) : null;
+  const isOnSale = compareAt != null && compareAt > price;
+  const currency = product.priceRange.minVariantPrice.currencyCode;
+  const imageUrl = product.images.edges[0]?.node.url;
 
-  const handleAddToCart = () => {
-    setLoading(true);
-    setTimeout(() => {
-      for (let i = 0; i < quantity; i++) {
-        addItem(product, selectedSize, selectedColor?.name || "");
-      }
-      setLoading(false);
-    }, 400);
+  const selectedVariant = product.variants.edges.find(v =>
+    v.node.selectedOptions.every(so => selectedOptions[so.name] === so.value)
+  )?.node || product.variants.edges[0]?.node;
+
+  const related = allProducts
+    .filter(p => p.node.handle !== product.handle)
+    .slice(0, 4);
+
+  const handleAddToCart = async () => {
+    if (!selectedVariant) return;
+    await addItem({
+      product: { node: product },
+      variantId: selectedVariant.id,
+      variantTitle: selectedVariant.title,
+      price: selectedVariant.price,
+      quantity,
+      selectedOptions: selectedVariant.selectedOptions,
+    });
   };
 
   return (
     <div className="container py-8">
-      <Link
-        to="/shop"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-      >
+      <Link to="/shop" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
         <ArrowLeft className="h-4 w-4" /> Back to shop
       </Link>
 
       <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
-        {/* Image */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="aspect-[3/4] bg-muted rounded-sm overflow-hidden"
-        >
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="aspect-[3/4] bg-muted rounded-sm overflow-hidden">
+          {imageUrl ? (
+            <img src={imageUrl} alt={product.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image</div>
+          )}
         </motion.div>
 
-        {/* Details */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col"
-        >
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex flex-col">
           <div className="flex items-start gap-2 mb-2">
-            {isOnSale && (
-              <Badge className="bg-accent text-accent-foreground text-[10px] rounded-sm">
-                Sale
-              </Badge>
-            )}
-            {!product.inStock && (
-              <Badge variant="secondary" className="text-[10px] rounded-sm">
-                Sold Out
-              </Badge>
-            )}
+            {isOnSale && <Badge className="bg-accent text-accent-foreground text-[10px] rounded-sm">Sale</Badge>}
+            {!product.availableForSale && <Badge variant="secondary" className="text-[10px] rounded-sm">Sold Out</Badge>}
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-light mb-2">{product.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-light mb-2">{product.title}</h1>
           <div className="flex items-center gap-3 mb-6">
-            <p className="text-xl">${product.price}</p>
-            {isOnSale && (
-              <p className="text-sm text-muted-foreground line-through">
-                ${product.compareAtPrice}
-              </p>
-            )}
+            <p className="text-xl">{currency === 'USD' ? '$' : currency}{price.toFixed(2)}</p>
+            {isOnSale && <p className="text-sm text-muted-foreground line-through">${compareAt!.toFixed(2)}</p>}
           </div>
 
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-            {product.description}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-8">{product.description}</p>
 
-          {/* Stock indicator */}
-          {product.inStock && product.stockCount <= 10 && (
-            <p className="text-xs text-accent mb-4">Only {product.stockCount} left in stock</p>
-          )}
-
-          {/* Size */}
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">Size</p>
-            <div className="flex flex-wrap gap-2">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`h-9 min-w-[2.5rem] px-3 text-xs border rounded-sm transition-colors ${
-                    selectedSize === size
-                      ? "border-foreground bg-primary text-primary-foreground"
-                      : "border-border hover:border-foreground"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Color */}
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
-              Color — {selectedColor?.name}
-            </p>
-            <div className="flex gap-2">
-              {product.colors.map((color) => (
-                <button
-                  key={color.name}
-                  onClick={() => setSelectedColor(color)}
-                  className={`h-7 w-7 rounded-full border-2 transition-all ${
-                    selectedColor?.name === color.name
-                      ? "border-foreground scale-110"
-                      : "border-transparent hover:border-muted-foreground"
-                  }`}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
+          {/* Options */}
+          {product.options
+            .filter(opt => !(opt.name === "Title" && opt.values.length === 1 && opt.values[0] === "Default Title"))
+            .map(opt => (
+              <div key={opt.name} className="mb-6">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
+                  {opt.name}{selectedOptions[opt.name] ? ` — ${selectedOptions[opt.name]}` : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {opt.values.map(val => (
+                    <button
+                      key={val}
+                      onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
+                      className={`h-9 min-w-[2.5rem] px-3 text-xs border rounded-sm transition-colors ${
+                        selectedOptions[opt.name] === val
+                          ? "border-foreground bg-primary text-primary-foreground"
+                          : "border-border hover:border-foreground"
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
 
           {/* Quantity + Add to cart */}
           <div className="flex gap-3 mt-auto">
             <div className="flex items-center border border-border rounded-sm">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
                 <Minus className="h-3.5 w-3.5" />
               </button>
               <span className="w-10 text-center text-sm">{quantity}</span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             <Button
               size="lg"
               className="flex-1 uppercase tracking-[0.1em] gap-2"
-              disabled={!product.inStock || loading}
+              disabled={!product.availableForSale || cartLoading}
               onClick={handleAddToCart}
             >
-              {loading ? (
-                <span className="animate-pulse">Adding...</span>
+              {cartLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
                   <ShoppingBag className="h-4 w-4" />
-                  {product.inStock ? "Add to Cart" : "Sold Out"}
+                  {product.availableForSale ? "Add to Cart" : "Sold Out"}
                 </>
               )}
             </Button>
@@ -183,16 +171,11 @@ export default function ProductDetail() {
         </motion.div>
       </div>
 
-      {/* Related Products */}
       {related.length > 0 && (
         <section className="mt-20 pt-10 border-t border-border">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
-            You May Also Like
-          </h2>
+          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">You May Also Like</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            {related.map((p) => <ProductCard key={p.node.id} product={p} />)}
           </div>
         </section>
       )}
