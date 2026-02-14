@@ -52,7 +52,7 @@ export default function Index() {
         >
           <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
           <h1 className="font-display text-5xl md:text-7xl mb-4">ancientika</h1>
-          <p className="font-bold text-xl md:text-2xl mb-8 tracking-wide">
+          <p className="text-base md:text-lg mb-8 tracking-wide">
             Your presence, refined.
           </p>
           <Button asChild size="lg" className="uppercase tracking-[0.15em]">
