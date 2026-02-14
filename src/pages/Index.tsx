@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,34 @@ import { fetchProducts } from "@/lib/shopify";
 import { Skeleton } from "@/components/ui/skeleton";
 import collectionsBg from "@/assets/collections-bg.jpg";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Index() {
   const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setSubscribing(true);
+    const { error } = await supabase.from("newsletter_subscribers").insert({ email: trimmed });
+    setSubscribing(false);
+    if (error) {
+      if (error.code === "23505") {
+        toast.info("You're already subscribed!");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+      return;
+    }
+    toast.success("You're subscribed! 🎉");
+    setEmail("");
+  };
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['shopify-products'],
@@ -149,9 +174,11 @@ export default function Index() {
         <div className="container py-16 text-center max-w-md mx-auto">
           <h2 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-4">Newsletter</h2>
           <p className="text-sm opacity-80 mb-6">First access to new drops and exclusive offers.</p>
-          <form onSubmit={(e) => { e.preventDefault(); setEmail(""); }} className="flex gap-2">
+          <form onSubmit={handleSubscribe} className="flex gap-2">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="flex-1 bg-primary-foreground/10 border border-primary-foreground/20 rounded-sm px-4 py-2.5 text-sm placeholder:text-primary-foreground/40 focus:outline-none focus:border-primary-foreground/50" />
-            <Button type="submit" variant="secondary" className="uppercase tracking-[0.1em] text-xs">Join</Button>
+            <Button type="submit" variant="secondary" className="uppercase tracking-[0.1em] text-xs" disabled={subscribing}>
+              {subscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Join"}
+            </Button>
           </form>
         </div>
       </section>
