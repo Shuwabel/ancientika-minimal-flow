@@ -1,45 +1,71 @@
-import { Link } from "react-router-dom";
-import { ShoppingBag, Search, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingBag, Search, ChevronDown } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
-import { useState } from "react";
+import { collections } from "@/lib/mock-data";
 import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
-
-const navLinks = [
-  { label: "Shop", href: "/shop" },
-];
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const { totalItems, setIsOpen } = useCart();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isShopPage = location.pathname === "/shop";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-16 items-center justify-between">
-        {/* Mobile menu toggle */}
-        <button
-          className="md:hidden p-2 -ml-2"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-
         {/* Logo */}
         <Link to="/">
           <img src={horizontalLogo} alt="Ancientika" className="h-8" />
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
+        {/* Nav - always visible, context-aware */}
+        <nav className="flex items-center gap-6">
+          {isShopPage && (
             <Link
-              key={link.href}
-              to={link.href}
+              to="/"
               className="text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors"
             >
-              {link.label}
+              Home
             </Link>
-          ))}
+          )}
+
+          {isShopPage ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors outline-none">
+                Shop <ChevronDown className="h-3.5 w-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="bg-popover">
+                <DropdownMenuItem
+                  onClick={() => navigate("/shop")}
+                  className="text-sm uppercase tracking-[0.1em] cursor-pointer"
+                >
+                  All
+                </DropdownMenuItem>
+                {collections.map((col) => (
+                  <DropdownMenuItem
+                    key={col.slug}
+                    onClick={() => navigate(`/shop?category=${col.slug}`)}
+                    className="text-sm uppercase tracking-[0.1em] cursor-pointer"
+                  >
+                    {col.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link
+              to="/shop"
+              className="text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Shop
+            </Link>
+          )}
         </nav>
 
         {/* Actions */}
@@ -61,22 +87,6 @@ export default function Header() {
           </button>
         </div>
       </div>
-
-      {/* Mobile Nav */}
-      {mobileMenuOpen && (
-        <nav className="md:hidden border-t border-border bg-background px-6 py-4 space-y-3">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      )}
     </header>
   );
 }
