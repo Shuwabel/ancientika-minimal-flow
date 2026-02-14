@@ -1,75 +1,42 @@
 
 
-# ANCIENTIKA — E-Commerce Storefront
+# Integrate Brand Logos and Font
 
-**"Premium, defined by less."**
+## What we're doing
+Adding your uploaded Ancientika brand assets (logos and PorshaRichela font) into the project and using them throughout the site.
 
-A custom-designed Shopify-powered storefront reflecting Scandinavian minimalism and Japanese craftsmanship.
+## Assets received
+- **PorshaRichela.ttf** - Display/logo font
+- **ancientika_logo_and_name_horizontal_2.png** - Black horizontal logo with text (for Header)
+- **Ancientika_logo_mocha_brown.png** - Mocha brown icon-only logo
+- **ANCIENTIKA_MAIN_LOGO.png** - Black icon-only logo
+- **ANCIENTIKA_MAIN_LOGO_WHITE.png** - White icon-only logo (for dark backgrounds)
+- **ika_white_vertical_logo.png** - White vertical logo with text
+- **ikan_horizontal_logo.png** - White horizontal logo with text
 
----
+## Where each asset will be used
 
-## Phase 1: Design System & Brand Foundation
+| Asset | Location |
+|-------|----------|
+| PorshaRichela.ttf | Copied to `public/fonts/` - already referenced in CSS `@font-face` |
+| Horizontal logo (black) | Header - replaces the text-only "Ancientika" link |
+| White vertical logo | Footer - replaces the text-only "Ancientika" branding |
+| White icon logo | Favicon / loading states (future use) |
+| Mocha brown icon | About page accent or brand section |
+| Black icon logo | Hero section on the home page |
 
-- **Color system**: Mocha brown, black, and beige palette with semantic tokens (surface, text, border, accent) — no default purples
-- **Typography**: PorshaRichela.ttf for logo/display, clean sans-serif for body text
-- **Component library**: All UI components styled to the Ancientika brand
-- **Responsive**: Mobile-first design across all pages
+## Changes
 
----
+1. **Copy font file** to `public/fonts/PorshaRichela.ttf` so the existing `@font-face` rule works
+2. **Copy all logo images** to `src/assets/` for use as ES6 imports
+3. **Header** - Replace the `font-display` text with the horizontal black logo image (`~h-8`)
+4. **Footer** - Replace the text "Ancientika" with the white vertical logo image
+5. **Home page hero** - Add the black icon logo above the tagline for visual impact
+6. **About page** - Use the mocha brown icon logo as a decorative accent
 
-## Phase 2: Core Pages
-
-### Home / Landing
-- Hero section with brand imagery and tagline
-- Featured collections grid
-- Brand philosophy section
-- Newsletter signup
-- Discounted items spotlight section
-
-### Shop / Collection Pages
-- Product grid with filtering by category, price, size
-- Search functionality
-- Category pages: Tops, Bottoms, Outerwear, Accessories
-- Stock availability indicators on product cards
-- Discount badges on sale items
-- **Quick-View on Hover**: Hovering a product card reveals an expanded preview overlay with full product images, size selector, color selector, and an "Add to Cart" button — allowing purchase without leaving the grid
-
-### Product Detail Page
-- Image gallery with zoom
-- Size & color selectors with size chart
-- Stock availability display
-- Add to cart with loading state
-- Related products section
-
-### About / Brand Story
-- Brand philosophy and craftsmanship narrative
-
-### Contact / Support
-- Contact form and support info
-
----
-
-## Phase 3: Shopping Experience
-
-- Slide-out cart drawer
-- Checkout via Shopify's secure checkout
-- Browsable discount/sale section
-
----
-
-## Phase 4: Shopify Integration
-
-- Create a new Shopify development store through Lovable
-- Product catalog, inventory, variants, pricing all managed by Shopify
-- Cart and checkout powered by Shopify
-- **Note**: Free to develop; 30-day trial starts when you claim; paid plan needed after trial to sell
-
----
-
-## Phase 5: Polish (Nice to Have)
-
-- Subtle page transitions and scroll animations
-- Skeleton loading screens for product grids
-- Button loading/progress states
-- Optional cinematic brand intro on first visit
+## Technical details
+- Font goes to `public/fonts/` since it's already referenced via CSS `url('/fonts/PorshaRichela.ttf')`
+- Logo images go to `src/assets/` and are imported as ES6 modules for proper bundling
+- All `<img>` tags will include proper `alt` text for accessibility
+- The `font-display` class already exists in CSS and will now render correctly once the `.ttf` file is in place
 
