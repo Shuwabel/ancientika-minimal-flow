@@ -1,32 +1,25 @@
 
 
-# UI Fixes Plan
+# Header Logo & Sidebar Fixes
 
-## 1. Move Background Image to Hero Section (`src/pages/Index.tsx`)
-The `collections-bg.jpg` background image is currently on the Collections grid section (line 92-94). It needs to move to the Hero + Featured section (line 44) which contains the "Explore Collection" button.
+## 1. Revert Header Logo to Logo+Name (`src/components/layout/Header.tsx`)
+- Change the import back to `ancientika_logo_and_name_horizontal_2.png` (the horizontal logo with brand name)
+- Apply a CSS filter to tint it brown: `sepia brightness-[0.7] hue-rotate-[350deg]` -- this converts the existing logo to a warm mocha brown tone without needing a separate asset
+- Note: If the original horizontal logo is already dark/black, a simpler approach using `brightness-0` + `sepia` + tuned values will achieve the brown color
 
-- Add the background image to the Hero section (line 44) behind the logo, caption, and Explore Collection button
-- Remove the background image from the Collections grid section, reverting it to a plain section
+## 2. Revert Hamburger Icon Size (`src/components/layout/Header.tsx`)
+- Change icon back from `h-4 w-4` to `h-5 w-5`
+- Change button padding back from `p-1.5` to `p-2`
 
-## 2. Footer Logo and Text Update (`src/components/layout/Footer.tsx`)
-- Replace the white vertical logo import with the mocha brown logo: `import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png"`
-- Remove the `brightness-0 invert` CSS filters since the brown logo doesn't need color inversion
-- Replace the paragraph text `"Premium, defined by less. Scandinavian minimalism meets Japanese craftsmanship."` with just `"Premium, defined by less"` wrapped in a `<strong>` tag with bold styling
-
-## 3. Make Newsletter Banner Clickable (`src/pages/Index.tsx`)
-- Wrap the sticky marquee banner content (lines 32-41) in an `<a href="/#newsletter">` tag
-- Add `id="newsletter"` to the Newsletter section (line 149)
-- The native anchor tag handles hash-based scrolling automatically, including cross-page navigation
+## 3. Make Sidebar Popup More Subtle (`src/components/layout/Header.tsx`)
+- Reduce the Sheet width from `w-72` (288px) to `w-56` (224px) so it takes up less screen real estate on mobile
+- This keeps the menu functional but less intrusive
 
 ## Technical Details
 
-### `src/pages/Index.tsx`
-- Line 44: Add `collectionsBg` as background image to the Hero section
-- Line 92-94: Remove the `<img>` and overlay from the Collections section
-- Lines 32-40: Wrap marquee spans in `<a href="/#newsletter">`
-- Line 149: Add `id="newsletter"` to the newsletter `<section>`
+### `src/components/layout/Header.tsx`
+- Line 5: `import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png"`
+- Line 29-30: Revert to `p-2` and `h-5 w-5`
+- Line 33: Change `w-72` to `w-56`
+- Line 67: Add brown tint filter to img: `className="h-8 sepia brightness-[0.7]"`
 
-### `src/components/layout/Footer.tsx`
-- Line 2: Change import to `Ancientika_logo_mocha_brown.png`
-- Line 11: Remove `brightness-0 invert` classes
-- Lines 12-14: Replace paragraph with `<p className="text-lg font-bold max-w-xs">Premium, defined by less</p>`
