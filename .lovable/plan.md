@@ -1,75 +1,48 @@
 
 
-# Navigation Overhaul, Newsletter Banner, and Color Fix
+# Restore Hamburger Menu + Fix Tablet Spacing
 
-## Summary
+## Two Changes
 
-Three main changes: make the navbar context-aware with a category dropdown, move the newsletter banner directly under the navbar, and restore the warm brown color palette.
+### 1. Hamburger Menu with Context-Aware Sidebar (`Header.tsx`)
 
----
+Restore the hamburger menu button on the left side of the header. The inline nav links currently in the header bar will be removed and moved into a sidebar (Sheet) that slides in from the left.
 
-## 1. Color Revert
+**Header bar layout:**
+- Left: Hamburger icon (Menu from lucide-react) -- always visible on all screen sizes
+- Center: Ancientika logo
+- Right: Search + Cart icons
 
-The current CSS variables in `index.css` already use the brown/mocha palette (hue 25-30). The newsletter banner currently uses `bg-accent` (mocha brown). If any elements have drifted, we will ensure all UI elements consistently use the warm brown tokens already defined. No major color changes needed -- the brown vibe is intact in the CSS, we just need to make sure all components reference it properly.
+**Sidebar behavior (context-aware):**
+- On Home page (`/`): Shows only "Shop" link
+- On Shop page (`/shop`): Shows "Home" link, then "Shop" with an expandable list of categories (All, Tops, Bottoms, Outerwear, Accessories)
+- Clicking any link navigates and closes the sidebar
+- Uses Sheet component (already exists) sliding from left
+- For the categories list on the shop page, use a simple collapsible toggle with `ChevronDown` icon and state
 
----
+### 2. Fix Tablet Empty Space (`Index.tsx`)
 
-## 2. Newsletter Banner -- Move to Right Below Navbar
+The hero section currently uses `min-h-[85vh]` which creates excessive whitespace below the featured products on tablet viewports. Fix by removing the fixed min-height and letting the content define the section height naturally.
 
-Currently the sticky banner sits between the Hero and Collections sections in `Index.tsx`. It will be:
-
-- Moved to the very top of the Index page content (before the Hero section)
-- Kept `sticky top-16 z-30` so it sticks right below the 64px (h-16) navbar
-- Only visible on the home page (stays in `Index.tsx`, not in Layout)
-- Continues scrolling marquee animation as-is
-
----
-
-## 3. Context-Aware Navbar (`Header.tsx`)
-
-The navbar will behave differently depending on which page the user is on:
-
-### On Home Page (`/`):
-- Shows only **Shop** link (as it does now)
-
-### On Shop Page (`/shop` or `/shop?category=...`):
-- Shows **Home** link above/before Shop
-- **Shop** becomes a dropdown trigger that opens a menu with all categories: Tops, Bottoms, Outerwear, Accessories
-- Clicking a category navigates to `/shop?category=slug`
-- This dropdown works on all platforms (PC, tablet, mobile) -- will use a Radix DropdownMenu component that works with both click and touch
-
-### Implementation approach:
-- Use `useLocation()` from react-router-dom to detect current route
-- Conditionally render "Home" link when on `/shop`
-- Replace the plain "Shop" link with a DropdownMenu trigger on the shop page
-- On the home page, "Shop" remains a simple link
-- Mobile nav also gets the same treatment -- no separate hamburger needed since the dropdown handles it
-- Remove the hamburger menu toggle since the nav is simple enough (Home + Shop dropdown)
-
----
-
-## 4. Shop Page Cleanup
-
-Since the navbar now has the category dropdown, the category Select dropdown in the Shop page filters section stays as a secondary filter (useful when a user is already on the page and wants to filter without scrolling up). Both the navbar dropdown and the shop page dropdown control `searchParams.category`.
+- Change `min-h-[85vh]` to just remove it or use a smaller value
+- Reduce top padding on tablet to tighten the layout
+- Reduce the gap between hero content and featured grid (`mt-12 md:mt-16` to `mt-8 md:mt-12`)
+- Reduce bottom padding on the hero section
 
 ---
 
 ## Technical Details
 
-### Files to modify:
+### `src/components/layout/Header.tsx`
+- Import `Menu` from lucide-react, `Sheet`/`SheetContent`/`SheetTrigger`/`SheetTitle` from `@/components/ui/sheet`
+- Add `useState` for sheet open state and a separate state for categories expanded toggle
+- Remove the inline `<nav>` block (lines 27-69)
+- Add Sheet with Menu trigger button on the left side of the header
+- Inside SheetContent (side="left"): render context-aware nav with warm brown styling
+- Use `useLocation` (already imported) to detect route, `useNavigate` (already imported) for category navigation
+- Close sheet on any link click by setting open state to false
 
-1. **`src/components/layout/Header.tsx`**
-   - Import `useLocation` from react-router-dom
-   - Import `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem` from `@/components/ui/dropdown-menu`
-   - Import `collections` from `@/lib/mock-data`
-   - Import `useNavigate` for category navigation
-   - Detect if on shop page: `const isShopPage = location.pathname === "/shop"`
-   - When `isShopPage`: render "Home" link to `/`, and "Shop" as a DropdownMenu with category items
-   - When on home: render "Shop" as a simple link (current behavior)
-   - Remove hamburger menu -- replace with always-visible nav links (only 1-2 items, fits on any screen)
-   - Both desktop and mobile show the same nav (no `hidden md:flex` split)
-
-2. **`src/pages/Index.tsx`**
-   - Move the sticky newsletter banner div (lines 52-62) to before the Hero section (line 19), so it appears right below the navbar
-   - Everything else stays the same
+### `src/pages/Index.tsx`
+- Line 31: Change `min-h-[85vh]` to remove it entirely, letting content flow naturally
+- Adjust spacing: reduce `pt-20 md:pt-28` to `pt-16 md:pt-24` and `mt-12 md:mt-16` to `mt-8 md:mt-12`
 
