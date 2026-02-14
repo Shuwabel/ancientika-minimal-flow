@@ -15,6 +15,18 @@ export default function Index() {
 
   return (
     <div>
+      {/* Sticky Newsletter Banner */}
+      <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap flex">
+          {[...Array(4)].map((_, i) => (
+            <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
+              Join our newsletter — First access to new drops and exclusive offers
+              <span className="mx-8">✦</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Hero + Featured */}
       <section className="relative min-h-[85vh] flex flex-col items-start justify-start pt-20 md:pt-28 bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/30" />
@@ -48,18 +60,6 @@ export default function Index() {
           </div>
         </div>
       </section>
-
-      {/* Sticky Newsletter Banner */}
-      <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap flex">
-          {[...Array(4)].map((_, i) => (
-            <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
-              Join our newsletter — First access to new drops and exclusive offers
-              <span className="mx-8">✦</span>
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* Collections Grid */}
       <section className="container py-20">
