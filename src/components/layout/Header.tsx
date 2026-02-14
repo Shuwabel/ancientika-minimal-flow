@@ -6,8 +6,6 @@ import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
 
 const navLinks = [
   { label: "Shop", href: "/shop" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
 ];
 
 export default function Header() {

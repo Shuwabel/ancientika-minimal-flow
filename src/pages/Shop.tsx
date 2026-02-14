@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { mockProducts, collections } from "@/lib/mock-data";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const priceRanges = [
   { label: "All", min: 0, max: Infinity },
@@ -59,32 +60,29 @@ export default function Shop() {
           )}
         </div>
 
-        {/* Category pills */}
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setSearchParams({})}
-            className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] rounded-sm border transition-colors ${
-              categoryParam === "all"
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border hover:border-foreground"
-            }`}
-          >
-            All
-          </button>
-          {collections.map((col) => (
-            <button
-              key={col.slug}
-              onClick={() => setSearchParams({ category: col.slug })}
-              className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] rounded-sm border transition-colors ${
-                categoryParam === col.slug
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border hover:border-foreground"
-              }`}
-            >
-              {col.name}
-            </button>
-          ))}
-        </div>
+        {/* Category dropdown */}
+        <Select
+          value={categoryParam}
+          onValueChange={(value) => {
+            if (value === "all") {
+              setSearchParams({});
+            } else {
+              setSearchParams({ category: value });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[180px] text-xs uppercase tracking-[0.1em]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {collections.map((col) => (
+              <SelectItem key={col.slug} value={col.slug}>
+                {col.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Price filter */}
         <div className="flex gap-2 flex-wrap">
