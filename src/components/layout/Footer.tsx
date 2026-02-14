@@ -3,43 +3,96 @@ import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border bg-primary text-primary-foreground">
       <div className="container py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-2 flex flex-col items-center md:items-start">
-            <img src={mainLogo} alt="Ancientika" className="h-16 mb-3" />
-            <p className="text-lg font-bold">Premium, defined by less</p>
-          </div>
-
-          {/* Links */}
+          {/* The Company */}
           <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 text-muted-foreground">Shop</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">The Company</h4>
             <ul className="space-y-2">
-              {["Tops", "Bottoms", "Outerwear", "Accessories"].map((cat) => (
-                <li key={cat}>
+              {[
+                { label: "About", href: "/about" },
+                { label: "Careers", href: "#" },
+                { label: "Press", href: "#" },
+                { label: "Store Locator", href: "#" },
+                { label: "Design & Craft", href: "#" },
+              ].map((link) => (
+                <li key={link.label}>
                   <Link
-                    to={`/shop?category=${cat.toLowerCase()}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    to={link.href}
+                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
                   >
-                    {cat}
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
+          {/* Assistance */}
           <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 text-muted-foreground">Info</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Assistance</h4>
             <ul className="space-y-2">
               {[
-                { label: "About", href: "/about" },
-                { label: "Contact", href: "/contact" },
+                { label: "Contact Us", href: "/contact" },
+                { label: "Delivery Information", href: "#" },
+                { label: "Payments", href: "#" },
+                { label: "Return & Refunds", href: "#" },
+                { label: "FAQ", href: "#" },
+                { label: "Product Care", href: "#" },
+                { label: "Size Guides", href: "#" },
               ].map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Legal</h4>
+            <ul className="space-y-2">
+              {[
+                "Privacy Policy",
+                "Terms & Conditions",
+                "Terms of Service",
+                "Cookie Notice",
+                "Cookies Settings",
+              ].map((label) => (
+                <li key={label}>
+                  <Link
+                    to="#"
+                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Follow Us */}
+          <div>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Follow Us</h4>
+            <ul className="space-y-2">
+              {[
+                { label: "Facebook", href: "#" },
+                { label: "Instagram", href: "#" },
+                { label: "Pinterest", href: "#" },
+                { label: "TikTok", href: "#" },
+                { label: "Spotify", href: "#" },
+                { label: "Subscribe", href: "/#newsletter" },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
                   >
                     {link.label}
                   </Link>
@@ -49,8 +102,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border text-center">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-12 pt-6 border-t border-primary-foreground/20 flex flex-col md:flex-row items-center justify-between gap-4">
+          <img src={mainLogo} alt="Ancientika" className="h-10 brightness-0 invert opacity-70" />
+          <p className="text-xs opacity-50">
             © {new Date().getFullYear()} ancientika. All rights reserved.
           </p>
         </div>

@@ -66,7 +66,7 @@ export default function Index() {
       </div>
 
       {/* Hero + Featured */}
-      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 overflow-hidden">
+      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 overflow-hidden min-h-screen">
         <img src={collectionsBg} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
         <div className="absolute inset-0 bg-background/60" />
         <motion.div
