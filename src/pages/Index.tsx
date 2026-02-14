@@ -30,19 +30,20 @@ export default function Index() {
     <div>
       {/* Sticky Newsletter Banner */}
       <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap flex">
+        <a href="/#newsletter" className="animate-marquee whitespace-nowrap flex">
           {[...Array(4)].map((_, i) => (
             <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
               Join our newsletter — First access to new drops and exclusive offers
               <span className="mx-8">✦</span>
             </span>
           ))}
-        </div>
+        </a>
       </div>
 
       {/* Hero + Featured */}
-      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 bg-card overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/30" />
+      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 overflow-hidden">
+        <img src={collectionsBg} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
+        <div className="absolute inset-0 bg-background/60" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -89,9 +90,7 @@ export default function Index() {
       </section>
 
       {/* Collections Grid */}
-      <section className="relative py-20 overflow-hidden">
-        <img src={collectionsBg} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
-        <div className="absolute inset-0 bg-background/70" />
+      <section className="relative py-20 overflow-hidden bg-card">
         <div className="container relative">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -146,7 +145,7 @@ export default function Index() {
       </section>
 
       {/* Newsletter */}
-      <section className="bg-primary text-primary-foreground">
+      <section id="newsletter" className="bg-primary text-primary-foreground">
         <div className="container py-16 text-center max-w-md mx-auto">
           <h2 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-4">Newsletter</h2>
           <p className="text-sm opacity-80 mb-6">First access to new drops and exclusive offers.</p>
