@@ -11,7 +11,7 @@ export default function Header() {
   const setIsOpen = useCartStore(s => s.setIsOpen);
   const location = useLocation();
   const navigate = useNavigate();
-  const isShopPage = location.pathname === "/shop";
+  const isHomePage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
 
@@ -33,33 +33,33 @@ export default function Header() {
           <SheetContent side="left" className="w-56">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <nav className="flex flex-col gap-1 mt-8">
-              {isShopPage && (
+              {!isHomePage && (
                 <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
                   Home
                 </button>
               )}
-              {isShopPage ? (
-                <div>
-                  <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                    Shop
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
-                  </button>
-                  {categoriesExpanded && (
-                    <div className="flex flex-col pl-4">
-                      <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
-                      {collections.map((col) => (
-                        <button key={col.slug} onClick={() => handleNav(`/shop?category=${col.slug}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
-                          {col.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+              <div>
+                <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
                   Shop
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
                 </button>
-              )}
+                {categoriesExpanded && (
+                  <div className="flex flex-col pl-4">
+                    <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
+                    {collections.map((col) => (
+                      <button key={col.slug} onClick={() => handleNav(`/shop?category=${col.slug}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
+                        {col.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                About
+              </button>
+              <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                Contact
+              </button>
             </nav>
           </SheetContent>
         </Sheet>
