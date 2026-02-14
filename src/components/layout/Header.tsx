@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Menu, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { collections } from "@/lib/mock-data";
-import horizontalLogo from "@/assets/Ancientika_logo_mocha_brown.png";
+import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState } from "react";
 
@@ -26,11 +26,11 @@ export default function Header() {
         {/* Hamburger */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetTrigger asChild>
-            <button className="p-1.5 hover:text-accent transition-colors" aria-label="Menu">
-              <Menu className="h-4 w-4" />
+            <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
+              <Menu className="h-5 w-5" />
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72">
+          <SheetContent side="left" className="w-56">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <nav className="flex flex-col gap-1 mt-8">
               {isShopPage && (
@@ -64,7 +64,7 @@ export default function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link to="/"><img src={horizontalLogo} alt="Ancientika" className="h-8" /></Link>
+        <Link to="/"><img src={horizontalLogo} alt="Ancientika" className="h-8 sepia brightness-[0.7]" /></Link>
 
         <div className="flex items-center gap-3">
           <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
