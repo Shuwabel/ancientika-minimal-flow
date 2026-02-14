@@ -28,7 +28,7 @@ export default function Index() {
       </div>
 
       {/* Hero + Featured */}
-      <section className="relative min-h-[85vh] flex flex-col items-start justify-start pt-20 md:pt-28 bg-card overflow-hidden">
+      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/30" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -49,7 +49,7 @@ export default function Index() {
         </motion.div>
 
         {/* Featured inside hero */}
-        <div className="relative container mt-12 md:mt-16 pb-12">
+        <div className="relative container mt-8 md:mt-12 pb-12">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
             Featured
           </h2>
