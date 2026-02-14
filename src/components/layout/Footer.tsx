@@ -5,9 +5,9 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="container py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* Brand */}
-          <div className="md:col-span-2">
+          <div className="col-span-2 md:col-span-2">
             <img src={verticalLogo} alt="Ancientika" className="h-16 mb-3 brightness-0 invert opacity-90" />
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               Premium, defined by less. Scandinavian minimalism meets Japanese craftsmanship.

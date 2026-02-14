@@ -78,9 +78,9 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
         <div className="mt-3 space-y-1">
           <p className="text-sm font-medium">{node.title}</p>
           <div className="flex items-center gap-2">
-            <p className="text-sm">{currency === 'USD' ? '$' : currency}{price.toFixed(2)}</p>
+            <p className="text-sm">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{price.toFixed(2)}</p>
             {isOnSale && (
-              <p className="text-xs text-muted-foreground line-through">${compareAt!.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground line-through">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{compareAt!.toFixed(2)}</p>
             )}
           </div>
         </div>
