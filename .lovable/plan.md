@@ -1,42 +1,74 @@
 
+# Home Page Restructure, Navigation Cleanup, and Shop Dropdown
 
-# Integrate Brand Logos and Font
+## Overview
+Combining all approved changes: restructure the home page sections, remove About and Contact from the header nav, add a sticky newsletter banner on the home page, and replace Shop category pills with a dropdown.
 
-## What we're doing
-Adding your uploaded Ancientika brand assets (logos and PorshaRichela font) into the project and using them throughout the site.
+---
 
-## Assets received
-- **PorshaRichela.ttf** - Display/logo font
-- **ancientika_logo_and_name_horizontal_2.png** - Black horizontal logo with text (for Header)
-- **Ancientika_logo_mocha_brown.png** - Mocha brown icon-only logo
-- **ANCIENTIKA_MAIN_LOGO.png** - Black icon-only logo
-- **ANCIENTIKA_MAIN_LOGO_WHITE.png** - White icon-only logo (for dark backgrounds)
-- **ika_white_vertical_logo.png** - White vertical logo with text
-- **ikan_horizontal_logo.png** - White horizontal logo with text
+## 1. Header Navigation (`src/components/layout/Header.tsx`)
 
-## Where each asset will be used
+- Remove both **About** and **Contact** from the `navLinks` array
+- Only "Shop" remains in the top nav (About and Contact are still accessible via footer)
 
-| Asset | Location |
-|-------|----------|
-| PorshaRichela.ttf | Copied to `public/fonts/` - already referenced in CSS `@font-face` |
-| Horizontal logo (black) | Header - replaces the text-only "Ancientika" link |
-| White vertical logo | Footer - replaces the text-only "Ancientika" branding |
-| White icon logo | Favicon / loading states (future use) |
-| Mocha brown icon | About page accent or brand section |
-| Black icon logo | Hero section on the home page |
+---
 
-## Changes
+## 2. Home Page (`src/pages/Index.tsx`)
 
-1. **Copy font file** to `public/fonts/PorshaRichela.ttf` so the existing `@font-face` rule works
-2. **Copy all logo images** to `src/assets/` for use as ES6 imports
-3. **Header** - Replace the `font-display` text with the horizontal black logo image (`~h-8`)
-4. **Footer** - Replace the text "Ancientika" with the white vertical logo image
-5. **Home page hero** - Add the black icon logo above the tagline for visual impact
-6. **About page** - Use the mocha brown icon logo as a decorative accent
+### Section reorder and hero adjustment:
 
-## Technical details
-- Font goes to `public/fonts/` since it's already referenced via CSS `url('/fonts/PorshaRichela.ttf')`
-- Logo images go to `src/assets/` and are imported as ES6 modules for proper bundling
-- All `<img>` tags will include proper `alt` text for accessibility
-- The `font-display` class already exists in CSS and will now render correctly once the `.ttf` file is in place
+**New section order:**
+1. **Hero** -- keep 85vh but shift content upward (`items-start pt-20 md:pt-28`) so the logo, title, tagline, and button sit higher, leaving room below
+2. **Featured products** -- placed directly after the hero content inside the same hero section, filling the space below the CTA button
+3. **Sticky Newsletter Banner** -- a thin, always-visible bar that stays fixed while scrolling (only on the home page). Shows "Join our newsletter" text with a subtle call-to-action. Positioned below the header (`top-16`) with `sticky` positioning and a high `z-index`
+4. **Collections Grid** -- unchanged
+5. **On Sale** -- moved up from its current position
+6. **Philosophy (expanded)** -- moved to the bottom, expanded with 3 informative pillars: Craftsmanship, Sustainability, and Timelessness
+7. **Newsletter form** -- stays at the very bottom as-is
 
+### Sticky Newsletter Banner details:
+- A slim bar (`py-2`) with `sticky top-16 z-30` positioning so it sticks right below the header
+- Background uses the accent color for contrast
+- Contains scrolling/marquee-style text: "Join our newsletter -- First access to new drops and exclusive offers"
+- CSS animation for horizontal text scroll (infinite marquee effect)
+- Only rendered inside `Index.tsx`, so it only appears on the home page
+
+---
+
+## 3. Shop Page (`src/pages/Shop.tsx`)
+
+### Category pills replaced with dropdown:
+- Replace the horizontal row of category buttons (lines 62-87) with a Radix `Select` dropdown
+- Import `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` from `@/components/ui/select`
+- Options: "All", plus each collection name
+- On value change, updates `searchParams` for category filtering
+- Price filter pills remain unchanged
+
+---
+
+## Technical Details
+
+### Files to modify:
+
+1. **`src/components/layout/Header.tsx`**
+   - Change `navLinks` array to only contain `{ label: "Shop", href: "/shop" }`
+
+2. **`src/pages/Index.tsx`**
+   - Hero section: change `items-center justify-center` to `items-start justify-start pt-20 md:pt-28` and place Featured grid inside the hero below the CTA
+   - Add a sticky newsletter banner element after the hero section with CSS marquee animation
+   - Reorder remaining sections: Collections, On Sale, Philosophy (expanded), Newsletter form
+   - Add inline `@keyframes marquee` style or a Tailwind `animate-marquee` class for the scrolling text
+
+3. **`src/pages/Shop.tsx`**
+   - Import Select components from `@/components/ui/select`
+   - Replace lines 62-87 (category pills) with a Select dropdown
+   - On `onValueChange`, call `setSearchParams` with selected category (or clear params for "all")
+
+4. **`src/index.css`** (optional)
+   - Add a `marquee` keyframe animation if not using inline styles:
+     ```
+     @keyframes marquee {
+       0% { transform: translateX(0); }
+       100% { transform: translateX(-50%); }
+     }
+     ```
