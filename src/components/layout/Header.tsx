@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Menu, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { collections } from "@/lib/mock-data";
-import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
+import mochaLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState } from "react";
 
@@ -64,7 +64,10 @@ export default function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link to="/"><img src={horizontalLogo} alt="Ancientika" className="h-8 sepia brightness-[0.7]" /></Link>
+        <Link to="/" className="flex items-center gap-1.5">
+          <img src={mochaLogo} alt="Ancientika" className="h-8" />
+          <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>Ancientika</span>
+        </Link>
 
         <div className="flex items-center gap-3">
           <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
