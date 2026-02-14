@@ -2,35 +2,33 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
-import { mockProducts, collections } from "@/lib/mock-data";
+import { collections } from "@/lib/mock-data";
+import { fetchProducts } from "@/lib/shopify";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const priceRanges = [
-  { label: "All", min: 0, max: Infinity },
-  { label: "Under $50", min: 0, max: 50 },
-  { label: "$50–$150", min: 50, max: 150 },
-  { label: "$150+", min: 150, max: Infinity },
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category") || "all";
   const [search, setSearch] = useState("");
-  const [priceRange, setPriceRange] = useState(priceRanges[0]);
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['shopify-products'],
+    queryFn: () => fetchProducts(50),
+  });
 
   const filtered = useMemo(() => {
-    return mockProducts.filter((p) => {
-      if (categoryParam !== "all" && p.category !== categoryParam) return false;
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-      if (p.price < priceRange.min || p.price >= priceRange.max) return false;
+    return products.filter((p) => {
+      if (search && !p.node.title.toLowerCase().includes(search.toLowerCase())) return false;
+      // Category filtering would need product tags/types from Shopify — for now show all
       return true;
     });
-  }, [categoryParam, search, priceRange]);
+  }, [products, search]);
 
   return (
     <div className="container py-10">
-      {/* Title */}
       <motion.h1
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -43,7 +41,6 @@ export default function Shop() {
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -60,15 +57,11 @@ export default function Shop() {
           )}
         </div>
 
-        {/* Category dropdown */}
         <Select
           value={categoryParam}
           onValueChange={(value) => {
-            if (value === "all") {
-              setSearchParams({});
-            } else {
-              setSearchParams({ category: value });
-            }
+            if (value === "all") setSearchParams({});
+            else setSearchParams({ category: value });
           }}
         >
           <SelectTrigger className="w-[180px] text-xs uppercase tracking-[0.1em]">
@@ -77,39 +70,30 @@ export default function Shop() {
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             {collections.map((col) => (
-              <SelectItem key={col.slug} value={col.slug}>
-                {col.name}
-              </SelectItem>
+              <SelectItem key={col.slug} value={col.slug}>{col.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-
-        {/* Price filter */}
-        <div className="flex gap-2 flex-wrap">
-          {priceRanges.map((range) => (
-            <button
-              key={range.label}
-              onClick={() => setPriceRange(range)}
-              className={`px-3 py-1.5 text-xs rounded-sm border transition-colors ${
-                priceRange.label === range.label
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border hover:border-foreground"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Product Grid */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-[3/4] w-full rounded-sm" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <p className="text-center text-muted-foreground py-20">No products found</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.map((product, i) => (
             <motion.div
-              key={product.id}
+              key={product.node.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
