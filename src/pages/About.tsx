@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import mochaBrownLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 
 export default function About() {
   return (
@@ -9,6 +10,7 @@ export default function About() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          <img src={mochaBrownLogo} alt="Ancientika" className="h-16 mx-auto mb-6" />
           <h1 className="font-display text-4xl md:text-5xl text-center mb-12">Our Story</h1>
 
           <div className="space-y-6 text-muted-foreground leading-relaxed">

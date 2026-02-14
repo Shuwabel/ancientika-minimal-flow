@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import verticalLogo from "@/assets/ika_white_vertical_logo.png";
 
 export default function Footer() {
   return (
@@ -7,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-2">
-            <p className="font-display text-3xl mb-3">Ancientika</p>
+            <img src={verticalLogo} alt="Ancientika" className="h-16 mb-3 brightness-0 invert opacity-90" />
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               Premium, defined by less. Scandinavian minimalism meets Japanese craftsmanship.
             </p>

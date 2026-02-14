@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingBag, Search, Menu, X } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
+import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
 
 const navLinks = [
   { label: "Shop", href: "/shop" },
@@ -26,8 +27,8 @@ export default function Header() {
         </button>
 
         {/* Logo */}
-        <Link to="/" className="font-display text-2xl tracking-wide">
-          Ancientika
+        <Link to="/">
+          <img src={horizontalLogo} alt="Ancientika" className="h-8" />
         </Link>
 
         {/* Desktop Nav */}
