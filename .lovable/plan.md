@@ -1,48 +1,56 @@
 
-# Home Page Restructure, Navigation Cleanup, and Shop Dropdown
 
-## Overview
-Combining all approved changes: restructure the home page sections, remove About and Contact from the header nav, add a sticky newsletter banner on the home page, and replace Shop category pills with a dropdown.
+# Navigation Overhaul, Newsletter Banner, and Color Fix
 
----
+## Summary
 
-## 1. Header Navigation (`src/components/layout/Header.tsx`)
-
-- Remove both **About** and **Contact** from the `navLinks` array
-- Only "Shop" remains in the top nav (About and Contact are still accessible via footer)
+Three main changes: make the navbar context-aware with a category dropdown, move the newsletter banner directly under the navbar, and restore the warm brown color palette.
 
 ---
 
-## 2. Home Page (`src/pages/Index.tsx`)
+## 1. Color Revert
 
-### Section reorder and hero adjustment:
-
-**New section order:**
-1. **Hero** -- keep 85vh but shift content upward (`items-start pt-20 md:pt-28`) so the logo, title, tagline, and button sit higher, leaving room below
-2. **Featured products** -- placed directly after the hero content inside the same hero section, filling the space below the CTA button
-3. **Sticky Newsletter Banner** -- a thin, always-visible bar that stays fixed while scrolling (only on the home page). Shows "Join our newsletter" text with a subtle call-to-action. Positioned below the header (`top-16`) with `sticky` positioning and a high `z-index`
-4. **Collections Grid** -- unchanged
-5. **On Sale** -- moved up from its current position
-6. **Philosophy (expanded)** -- moved to the bottom, expanded with 3 informative pillars: Craftsmanship, Sustainability, and Timelessness
-7. **Newsletter form** -- stays at the very bottom as-is
-
-### Sticky Newsletter Banner details:
-- A slim bar (`py-2`) with `sticky top-16 z-30` positioning so it sticks right below the header
-- Background uses the accent color for contrast
-- Contains scrolling/marquee-style text: "Join our newsletter -- First access to new drops and exclusive offers"
-- CSS animation for horizontal text scroll (infinite marquee effect)
-- Only rendered inside `Index.tsx`, so it only appears on the home page
+The current CSS variables in `index.css` already use the brown/mocha palette (hue 25-30). The newsletter banner currently uses `bg-accent` (mocha brown). If any elements have drifted, we will ensure all UI elements consistently use the warm brown tokens already defined. No major color changes needed -- the brown vibe is intact in the CSS, we just need to make sure all components reference it properly.
 
 ---
 
-## 3. Shop Page (`src/pages/Shop.tsx`)
+## 2. Newsletter Banner -- Move to Right Below Navbar
 
-### Category pills replaced with dropdown:
-- Replace the horizontal row of category buttons (lines 62-87) with a Radix `Select` dropdown
-- Import `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` from `@/components/ui/select`
-- Options: "All", plus each collection name
-- On value change, updates `searchParams` for category filtering
-- Price filter pills remain unchanged
+Currently the sticky banner sits between the Hero and Collections sections in `Index.tsx`. It will be:
+
+- Moved to the very top of the Index page content (before the Hero section)
+- Kept `sticky top-16 z-30` so it sticks right below the 64px (h-16) navbar
+- Only visible on the home page (stays in `Index.tsx`, not in Layout)
+- Continues scrolling marquee animation as-is
+
+---
+
+## 3. Context-Aware Navbar (`Header.tsx`)
+
+The navbar will behave differently depending on which page the user is on:
+
+### On Home Page (`/`):
+- Shows only **Shop** link (as it does now)
+
+### On Shop Page (`/shop` or `/shop?category=...`):
+- Shows **Home** link above/before Shop
+- **Shop** becomes a dropdown trigger that opens a menu with all categories: Tops, Bottoms, Outerwear, Accessories
+- Clicking a category navigates to `/shop?category=slug`
+- This dropdown works on all platforms (PC, tablet, mobile) -- will use a Radix DropdownMenu component that works with both click and touch
+
+### Implementation approach:
+- Use `useLocation()` from react-router-dom to detect current route
+- Conditionally render "Home" link when on `/shop`
+- Replace the plain "Shop" link with a DropdownMenu trigger on the shop page
+- On the home page, "Shop" remains a simple link
+- Mobile nav also gets the same treatment -- no separate hamburger needed since the dropdown handles it
+- Remove the hamburger menu toggle since the nav is simple enough (Home + Shop dropdown)
+
+---
+
+## 4. Shop Page Cleanup
+
+Since the navbar now has the category dropdown, the category Select dropdown in the Shop page filters section stays as a secondary filter (useful when a user is already on the page and wants to filter without scrolling up). Both the navbar dropdown and the shop page dropdown control `searchParams.category`.
 
 ---
 
@@ -51,24 +59,17 @@ Combining all approved changes: restructure the home page sections, remove About
 ### Files to modify:
 
 1. **`src/components/layout/Header.tsx`**
-   - Change `navLinks` array to only contain `{ label: "Shop", href: "/shop" }`
+   - Import `useLocation` from react-router-dom
+   - Import `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem` from `@/components/ui/dropdown-menu`
+   - Import `collections` from `@/lib/mock-data`
+   - Import `useNavigate` for category navigation
+   - Detect if on shop page: `const isShopPage = location.pathname === "/shop"`
+   - When `isShopPage`: render "Home" link to `/`, and "Shop" as a DropdownMenu with category items
+   - When on home: render "Shop" as a simple link (current behavior)
+   - Remove hamburger menu -- replace with always-visible nav links (only 1-2 items, fits on any screen)
+   - Both desktop and mobile show the same nav (no `hidden md:flex` split)
 
 2. **`src/pages/Index.tsx`**
-   - Hero section: change `items-center justify-center` to `items-start justify-start pt-20 md:pt-28` and place Featured grid inside the hero below the CTA
-   - Add a sticky newsletter banner element after the hero section with CSS marquee animation
-   - Reorder remaining sections: Collections, On Sale, Philosophy (expanded), Newsletter form
-   - Add inline `@keyframes marquee` style or a Tailwind `animate-marquee` class for the scrolling text
+   - Move the sticky newsletter banner div (lines 52-62) to before the Hero section (line 19), so it appears right below the navbar
+   - Everything else stays the same
 
-3. **`src/pages/Shop.tsx`**
-   - Import Select components from `@/components/ui/select`
-   - Replace lines 62-87 (category pills) with a Select dropdown
-   - On `onValueChange`, call `setSearchParams` with selected category (or clear params for "all")
-
-4. **`src/index.css`** (optional)
-   - Add a `marquee` keyframe animation if not using inline styles:
-     ```
-     @keyframes marquee {
-       0% { transform: translateX(0); }
-       100% { transform: translateX(-50%); }
-     }
-     ```
