@@ -12,10 +12,7 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 { label: "About", href: "/about" },
-                { label: "Careers", href: "#" },
-                { label: "Press", href: "#" },
-                { label: "Store Locator", href: "#" },
-                { label: "Design & Craft", href: "#" },
+                { label: "Shop", href: "/shop" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -36,11 +33,7 @@ export default function Footer() {
               {[
                 { label: "Contact Us", href: "/contact" },
                 { label: "Delivery Information", href: "#" },
-                { label: "Payments", href: "#" },
                 { label: "Return & Refunds", href: "#" },
-                { label: "FAQ", href: "#" },
-                { label: "Product Care", href: "#" },
-                { label: "Size Guides", href: "#" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -61,9 +54,6 @@ export default function Footer() {
               {[
                 "Privacy Policy",
                 "Terms & Conditions",
-                "Terms of Service",
-                "Cookie Notice",
-                "Cookies Settings",
               ].map((label) => (
                 <li key={label}>
                   <Link
@@ -82,11 +72,8 @@ export default function Footer() {
             <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Follow Us</h4>
             <ul className="space-y-2">
               {[
-                { label: "Facebook", href: "#" },
                 { label: "Instagram", href: "#" },
-                { label: "Pinterest", href: "#" },
                 { label: "TikTok", href: "#" },
-                { label: "Spotify", href: "#" },
                 { label: "Subscribe", href: "/#newsletter" },
               ].map((link) => (
                 <li key={link.label}>
