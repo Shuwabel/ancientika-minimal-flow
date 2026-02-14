@@ -1,15 +1,44 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: "Message sent", description: "We'll get back to you shortly." });
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const message = form.message.trim();
+
+    if (!name || !email || !message) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (name.length > 100 || email.length > 255 || message.length > 2000) {
+      toast.error("One or more fields exceed the maximum length.");
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await supabase
+      .from("contact_messages")
+      .insert({ name, email, message });
+    setSubmitting(false);
+
+    if (error) {
+      toast.error("Something went wrong. Please try again.");
+      return;
+    }
+    toast.success("Message sent! We'll get back to you shortly.");
     setForm({ name: "", email: "", message: "" });
   };
 
@@ -57,8 +86,8 @@ export default function Contact() {
               className="w-full bg-card border border-border rounded-sm px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
             />
           </div>
-          <Button type="submit" className="w-full uppercase tracking-[0.1em]" size="lg">
-            Send Message
+          <Button type="submit" className="w-full uppercase tracking-[0.1em]" size="lg" disabled={submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Message"}
           </Button>
         </form>
       </motion.div>
