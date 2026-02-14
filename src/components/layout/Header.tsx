@@ -64,9 +64,8 @@ export default function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="flex items-center gap-1.5">
-          <img src={mochaLogo} alt="Ancientika" className="h-8" />
-          <span className="text-foreground text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
+        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+          <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
         </Link>
 
         <div className="flex items-center gap-3">
