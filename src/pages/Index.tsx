@@ -15,14 +15,14 @@ export default function Index() {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="relative h-[85vh] flex items-center justify-center bg-card overflow-hidden">
+      {/* Hero + Featured */}
+      <section className="relative min-h-[85vh] flex flex-col items-start justify-start pt-20 md:pt-28 bg-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/30" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative text-center px-6 max-w-2xl"
+          className="relative text-center px-6 max-w-2xl mx-auto"
         >
           <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
           <h1 className="font-display text-5xl md:text-7xl mb-4">Ancientika</h1>
@@ -35,7 +35,31 @@ export default function Index() {
             </Link>
           </Button>
         </motion.div>
+
+        {/* Featured inside hero */}
+        <div className="relative container mt-12 md:mt-16 pb-12">
+          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
+            Featured
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
       </section>
+
+      {/* Sticky Newsletter Banner */}
+      <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap flex">
+          {[...Array(4)].map((_, i) => (
+            <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
+              Join our newsletter — First access to new drops and exclusive offers
+              <span className="mx-8">✦</span>
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* Collections Grid */}
       <section className="container py-20">
@@ -66,41 +90,9 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Featured */}
-      <section className="container py-20 border-t border-border">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
-          Featured
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* Brand Philosophy */}
-      <section className="bg-card">
-        <div className="container py-24 text-center max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-6">
-              Philosophy
-            </h2>
-            <p className="text-xl md:text-2xl leading-relaxed font-light">
-              Where Scandinavian restraint meets Japanese reverence for craft. Every piece is designed
-              to age beautifully — because true luxury isn't loud.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Discounted Items */}
+      {/* On Sale */}
       {discountedProducts.length > 0 && (
-        <section className="container py-20">
+        <section className="container py-20 border-t border-border">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
             On Sale
           </h2>
@@ -111,6 +103,42 @@ export default function Index() {
           </div>
         </section>
       )}
+
+      {/* Philosophy */}
+      <section className="bg-card">
+        <div className="container py-24 max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-12 text-center">
+              Philosophy
+            </h2>
+            <div className="grid md:grid-cols-3 gap-10 text-center">
+              <div>
+                <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Craftsmanship</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Every piece is constructed by skilled artisans using time-honoured techniques. We believe in making fewer things, better — garments that reward attention to detail.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Sustainability</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Responsibly sourced materials, low-impact processes, and a commitment to reducing waste at every stage. Quality over quantity means less ends up discarded.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Timelessness</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Designed to transcend seasons and trends. Where Scandinavian restraint meets Japanese reverence for craft — true luxury isn't loud, it endures.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Newsletter */}
       <section className="bg-primary text-primary-foreground">
