@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cartStore";
 import { Minus, Plus, X, ExternalLink, Loader2 } from "lucide-react";
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$', EUR: '€', GBP: '£', NGN: '₦', JPY: '¥', CNY: '¥',
+  KRW: '₩', INR: '₹', BRL: 'R$', ZAR: 'R', CAD: 'CA$', AUD: 'A$',
+};
+const getCurrencySymbol = (code: string) => CURRENCY_SYMBOLS[code] || code;
+
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, isLoading, isSyncing, getCheckoutUrl, syncCart } = useCartStore();
 
@@ -75,7 +81,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <p className="text-sm font-medium">
-                        ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                        {getCurrencySymbol(item.price.currencyCode)}{(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -86,7 +92,7 @@ export default function CartDrawer() {
             <div className="border-t border-border pt-4 space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm uppercase tracking-wide">Total</span>
-                <span className="text-sm font-medium">{currency === 'USD' ? '$' : currency}{totalPrice.toFixed(2)}</span>
+                <span className="text-sm font-medium">{getCurrencySymbol(currency)}{totalPrice.toFixed(2)}</span>
               </div>
               <Button
                 className="w-full uppercase tracking-[0.1em] gap-2"
