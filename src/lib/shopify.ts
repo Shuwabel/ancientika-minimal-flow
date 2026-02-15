@@ -36,13 +36,11 @@ export interface ShopifyProduct {
   };
 }
 
-export async function storefrontApiRequest(query: string, variables: Record<string, unknown> = {}) {
+async function proxyRequest(queryId: string, variables: Record<string, unknown> = {}) {
   const response = await fetch(SHOPIFY_PROXY_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query, variables }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ queryId, variables }),
   });
 
   if (response.status === 402) {
@@ -63,88 +61,14 @@ export async function storefrontApiRequest(query: string, variables: Record<stri
   return data;
 }
 
-// Product queries
-const PRODUCTS_QUERY = `
-  query GetProducts($first: Int!, $query: String) {
-    products(first: $first, query: $query) {
-      edges {
-        node {
-          id
-          title
-          description
-          handle
-          productType
-          availableForSale
-          priceRange {
-            minVariantPrice { amount currencyCode }
-          }
-          compareAtPriceRange {
-            minVariantPrice { amount currencyCode }
-          }
-          images(first: 5) {
-            edges { node { url altText } }
-          }
-          variants(first: 10) {
-            edges {
-              node {
-                id
-                title
-                price { amount currencyCode }
-                compareAtPrice { amount currencyCode }
-                availableForSale
-                selectedOptions { name value }
-              }
-            }
-          }
-          options { name values }
-        }
-      }
-    }
-  }
-`;
-
-const PRODUCT_BY_HANDLE_QUERY = `
-  query GetProductByHandle($handle: String!) {
-    productByHandle(handle: $handle) {
-      id
-      title
-      description
-      handle
-      productType
-      availableForSale
-      priceRange {
-        minVariantPrice { amount currencyCode }
-      }
-      compareAtPriceRange {
-        minVariantPrice { amount currencyCode }
-      }
-      images(first: 10) {
-        edges { node { url altText } }
-      }
-      variants(first: 30) {
-        edges {
-          node {
-            id
-            title
-            price { amount currencyCode }
-            compareAtPrice { amount currencyCode }
-            availableForSale
-            selectedOptions { name value }
-          }
-        }
-      }
-      options { name values }
-    }
-  }
-`;
-
+// Product fetchers
 export async function fetchProducts(first = 50, query?: string): Promise<ShopifyProduct[]> {
-  const data = await storefrontApiRequest(PRODUCTS_QUERY, { first, query: query || null });
+  const data = await proxyRequest('getProducts', { first, query: query || null });
   return data?.data?.products?.edges || [];
 }
 
 export async function fetchProductByHandle(handle: string): Promise<ShopifyProduct['node'] | null> {
-  const data = await storefrontApiRequest(PRODUCT_BY_HANDLE_QUERY, { handle });
+  const data = await proxyRequest('getProductByHandle', { handle });
   return data?.data?.productByHandle || null;
 }
 
@@ -159,73 +83,12 @@ export interface ShopifyCollection {
   };
 }
 
-const COLLECTIONS_QUERY = `
-  query GetCollections($first: Int!) {
-    collections(first: $first) {
-      edges {
-        node {
-          id
-          title
-          handle
-          description
-          image { url altText }
-        }
-      }
-    }
-  }
-`;
-
 export async function fetchCollections(first = 10): Promise<ShopifyCollection[]> {
-  const data = await storefrontApiRequest(COLLECTIONS_QUERY, { first });
+  const data = await proxyRequest('getCollections', { first });
   return data?.data?.collections?.edges || [];
 }
 
-// Cart mutations
-const CART_QUERY = `query cart($id: ID!) { cart(id: $id) { id totalQuantity } }`;
-
-const CART_CREATE_MUTATION = `
-  mutation cartCreate($input: CartInput!) {
-    cartCreate(input: $input) {
-      cart {
-        id
-        checkoutUrl
-        lines(first: 100) { edges { node { id merchandise { ... on ProductVariant { id } } } } }
-      }
-      userErrors { field message }
-    }
-  }
-`;
-
-const CART_LINES_ADD_MUTATION = `
-  mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
-    cartLinesAdd(cartId: $cartId, lines: $lines) {
-      cart {
-        id
-        lines(first: 100) { edges { node { id merchandise { ... on ProductVariant { id } } } } }
-      }
-      userErrors { field message }
-    }
-  }
-`;
-
-const CART_LINES_UPDATE_MUTATION = `
-  mutation cartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
-    cartLinesUpdate(cartId: $cartId, lines: $lines) {
-      cart { id }
-      userErrors { field message }
-    }
-  }
-`;
-
-const CART_LINES_REMOVE_MUTATION = `
-  mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
-    cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
-      cart { id }
-      userErrors { field message }
-    }
-  }
-`;
-
+// Cart
 function formatCheckoutUrl(checkoutUrl: string): string {
   try {
     const url = new URL(checkoutUrl);
@@ -251,7 +114,7 @@ export interface CartItem {
 }
 
 export async function createShopifyCart(item: CartItem) {
-  const data = await storefrontApiRequest(CART_CREATE_MUTATION, {
+  const data = await proxyRequest('cartCreate', {
     input: { lines: [{ quantity: item.quantity, merchandiseId: item.variantId }] },
   });
   if (data?.data?.cartCreate?.userErrors?.length > 0) return null;
@@ -263,7 +126,7 @@ export async function createShopifyCart(item: CartItem) {
 }
 
 export async function addLineToShopifyCart(cartId: string, item: CartItem) {
-  const data = await storefrontApiRequest(CART_LINES_ADD_MUTATION, {
+  const data = await proxyRequest('cartLinesAdd', {
     cartId,
     lines: [{ quantity: item.quantity, merchandiseId: item.variantId }],
   });
@@ -276,7 +139,7 @@ export async function addLineToShopifyCart(cartId: string, item: CartItem) {
 }
 
 export async function updateShopifyCartLine(cartId: string, lineId: string, quantity: number) {
-  const data = await storefrontApiRequest(CART_LINES_UPDATE_MUTATION, {
+  const data = await proxyRequest('cartLinesUpdate', {
     cartId,
     lines: [{ id: lineId, quantity }],
   });
@@ -287,7 +150,7 @@ export async function updateShopifyCartLine(cartId: string, lineId: string, quan
 }
 
 export async function removeLineFromShopifyCart(cartId: string, lineId: string) {
-  const data = await storefrontApiRequest(CART_LINES_REMOVE_MUTATION, {
+  const data = await proxyRequest('cartLinesRemove', {
     cartId,
     lineIds: [lineId],
   });
@@ -298,7 +161,7 @@ export async function removeLineFromShopifyCart(cartId: string, lineId: string) 
 }
 
 export async function fetchCart(cartId: string) {
-  const data = await storefrontApiRequest(CART_QUERY, { id: cartId });
+  const data = await proxyRequest('getCart', { id: cartId });
   if (!data) return null;
   return data?.data?.cart;
 }
