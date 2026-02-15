@@ -32,6 +32,8 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 { label: "Contact Us", href: "/contact" },
+                { label: "Size Guide", href: "/size-guide" },
+                { label: "Product Care", href: "/product-care" },
                 { label: "Delivery Information", href: "#" },
                 { label: "Return & Refunds", href: "#" },
               ].map((link) => (
@@ -71,20 +73,34 @@ export default function Footer() {
           <div>
             <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Follow Us</h4>
             <ul className="space-y-2">
-              {[
-                { label: "Instagram", href: "#" },
-                { label: "TikTok", href: "#" },
-                { label: "Subscribe", href: "/#newsletter" },
-              ].map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <a
+                  href="https://www.instagram.com/ancientika?igsh=MXg1Nnp5bmV2aGM0bA=="
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.tiktok.com/@ancientika?_r=1&_t=ZS-93vY16bppCL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  TikTok
+                </a>
+              </li>
+              <li>
+                <Link
+                  to="/#newsletter"
+                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  Subscribe
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

@@ -1,20 +1,26 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2, Ruler, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchProductByHandle, fetchProducts } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
+import { useSizeStore } from "@/stores/sizeStore";
+import { getCategoryFromProductType } from "@/lib/size-data";
 import ProductCard from "@/components/ProductCard";
+import SizeGuideModal from "@/components/SizeGuideModal";
+import SizeRecommenderModal from "@/components/SizeRecommenderModal";
 
 export default function ProductDetail() {
   const { handle } = useParams();
   const { addItem, isLoading: cartLoading } = useCartStore();
+  const { getRecommendation } = useSizeStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [optionsInitialized, setOptionsInitialized] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['shopify-product', handle],
@@ -27,12 +33,31 @@ export default function ProductDetail() {
     queryFn: () => fetchProducts(50),
   });
 
-  // Initialize selected options when product loads
-  if (product && Object.keys(selectedOptions).length === 0 && product.options.length > 0) {
-    const defaults: Record<string, string> = {};
-    product.options.forEach(opt => { defaults[opt.name] = opt.values[0]; });
-    setSelectedOptions(defaults);
-  }
+  const productCategory = product ? getCategoryFromProductType(product.productType || "") : null;
+  const recommendedSize = productCategory ? getRecommendation(productCategory) : null;
+
+  // Initialize selected options when product loads, using recommended size if available
+  useEffect(() => {
+    if (product && !optionsInitialized && product.options.length > 0) {
+      const defaults: Record<string, string> = {};
+      product.options.forEach(opt => {
+        if (opt.name.toLowerCase() === "size" && recommendedSize && opt.values.includes(recommendedSize)) {
+          defaults[opt.name] = recommendedSize;
+        } else {
+          defaults[opt.name] = opt.values[0];
+        }
+      });
+      setSelectedOptions(defaults);
+      setOptionsInitialized(true);
+    }
+  }, [product, optionsInitialized, recommendedSize]);
+
+  // Reset initialization when handle changes
+  useEffect(() => {
+    setOptionsInitialized(false);
+    setSelectedOptions({});
+    setQuantity(1);
+  }, [handle]);
 
   if (isLoading) {
     return (
@@ -65,6 +90,7 @@ export default function ProductDetail() {
   const isOnSale = compareAt != null && compareAt > price;
   const currency = product.priceRange.minVariantPrice.currencyCode;
   const imageUrl = product.images.edges[0]?.node.url;
+  const currencySymbol = currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency;
 
   const selectedVariant = product.variants.edges.find(v =>
     v.node.selectedOptions.every(so => selectedOptions[so.name] === so.value)
@@ -85,6 +111,8 @@ export default function ProductDetail() {
       selectedOptions: selectedVariant.selectedOptions,
     });
   };
+
+  const hasSizeOption = product.options.some(opt => opt.name.toLowerCase() === "size");
 
   return (
     <div className="container py-8">
@@ -109,8 +137,8 @@ export default function ProductDetail() {
 
           <h1 className="text-2xl md:text-3xl font-light mb-2">{product.title}</h1>
           <div className="flex items-center gap-3 mb-6">
-            <p className="text-xl">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{price.toFixed(2)}</p>
-            {isOnSale && <p className="text-sm text-muted-foreground line-through">{currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency}{compareAt!.toFixed(2)}</p>}
+            <p className="text-xl">{currencySymbol}{price.toFixed(2)}</p>
+            {isOnSale && <p className="text-sm text-muted-foreground line-through">{currencySymbol}{compareAt!.toFixed(2)}</p>}
           </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed mb-8">{product.description}</p>
@@ -118,28 +146,72 @@ export default function ProductDetail() {
           {/* Options */}
           {product.options
             .filter(opt => !(opt.name === "Title" && opt.values.length === 1 && opt.values[0] === "Default Title"))
-            .map(opt => (
-              <div key={opt.name} className="mb-6">
-                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
-                  {opt.name}{selectedOptions[opt.name] ? ` — ${selectedOptions[opt.name]}` : ''}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {opt.values.map(val => (
-                    <button
-                      key={val}
-                      onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
-                      className={`h-9 min-w-[2.5rem] px-3 text-xs border rounded-sm transition-colors ${
-                        selectedOptions[opt.name] === val
-                          ? "border-foreground bg-primary text-primary-foreground"
-                          : "border-border hover:border-foreground"
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  ))}
+            .map(opt => {
+              const isSizeOpt = opt.name.toLowerCase() === "size";
+              return (
+                <div key={opt.name} className="mb-6">
+                  <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
+                    {opt.name}{selectedOptions[opt.name] ? ` — ${selectedOptions[opt.name]}` : ''}
+                    {isSizeOpt && recommendedSize && selectedOptions[opt.name] === recommendedSize && (
+                      <span className="ml-2 text-accent normal-case tracking-normal">✓ Recommended</span>
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {opt.values.map(val => (
+                      <button
+                        key={val}
+                        onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
+                        className={`relative h-9 min-w-[2.5rem] px-3 text-xs border rounded-sm transition-colors ${
+                          selectedOptions[opt.name] === val
+                            ? "border-foreground bg-primary text-primary-foreground"
+                            : "border-border hover:border-foreground"
+                        }`}
+                      >
+                        {val}
+                        {isSizeOpt && recommendedSize === val && (
+                          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Size Guide + Recommender links */}
+                  {isSizeOpt && productCategory && (
+                    <div className="flex items-center gap-4 mt-2.5">
+                      <SizeGuideModal category={productCategory}>
+                        <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2">
+                          <Ruler className="h-3 w-3" /> Size Guide
+                        </button>
+                      </SizeGuideModal>
+                      <SizeRecommenderModal
+                        category={productCategory}
+                        onRecommendation={(size) => setSelectedOptions(prev => ({ ...prev, [opt.name]: size }))}
+                      >
+                        <button className="inline-flex items-center gap-1 text-xs text-accent hover:text-foreground transition-colors underline underline-offset-2">
+                          <Sparkles className="h-3 w-3" /> {recommendedSize ? "Retake Size Quiz" : "What's My Size?"}
+                        </button>
+                      </SizeRecommenderModal>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
+          {/* If product has sizing but no Size option in Shopify variants, still show guide */}
+          {!hasSizeOption && productCategory && (
+            <div className="flex items-center gap-4 mb-6">
+              <SizeGuideModal category={productCategory}>
+                <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2">
+                  <Ruler className="h-3 w-3" /> Size Guide
+                </button>
+              </SizeGuideModal>
+              <SizeRecommenderModal category={productCategory}>
+                <button className="inline-flex items-center gap-1 text-xs text-accent hover:text-foreground transition-colors underline underline-offset-2">
+                  <Sparkles className="h-3 w-3" /> What's My Size?
+                </button>
+              </SizeRecommenderModal>
+            </div>
+          )}
 
           {/* Quantity + Add to cart */}
           <div className="flex gap-3 mt-auto">
