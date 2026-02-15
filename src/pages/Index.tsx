@@ -9,8 +9,9 @@ import { fetchProducts, fetchCollections } from "@/lib/shopify";
 import { Skeleton } from "@/components/ui/skeleton";
 import collectionsBg from "@/assets/collections-bg.jpg";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -25,16 +26,28 @@ export default function Index() {
       return;
     }
     setSubscribing(true);
-    const { error } = await supabase.from("newsletter_subscribers").insert({ email: trimmed });
-    setSubscribing(false);
-    if (error) {
-      if (error.code === "23505") {
-        toast.info("You're already subscribed!");
-      } else {
-        toast.error("Something went wrong. Please try again.");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/subscribe-newsletter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409 || data?.error === "already_subscribed") {
+          toast.info("You're already subscribed!");
+        } else {
+          toast.error("Something went wrong. Please try again.");
+        }
+        setSubscribing(false);
+        return;
       }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+      setSubscribing(false);
       return;
     }
+    setSubscribing(false);
     toast.success("You're subscribed! 🎉");
     setEmail("");
     setShowPopup(false);

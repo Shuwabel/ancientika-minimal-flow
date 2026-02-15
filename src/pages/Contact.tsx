@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -29,15 +31,23 @@ export default function Contact() {
     }
 
     setSubmitting(true);
-    const { error } = await supabase
-      .from("contact_messages")
-      .insert({ name, email, message });
-    setSubmitting(false);
-
-    if (error) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message }),
+      });
+      if (!res.ok) {
+        toast.error("Something went wrong. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+    } catch {
       toast.error("Something went wrong. Please try again.");
+      setSubmitting(false);
       return;
     }
+    setSubmitting(false);
     toast.success("Message sent! We'll get back to you shortly.");
     setForm({ name: "", email: "", message: "" });
   };
