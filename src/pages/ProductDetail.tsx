@@ -14,6 +14,24 @@ import ProductCard from "@/components/ProductCard";
 import SizeGuideModal from "@/components/SizeGuideModal";
 import SizeRecommenderModal from "@/components/SizeRecommenderModal";
 
+const SIZE_ORDER: Record<string, number> = {
+  XXS: 0, XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, XXXL: 7,
+  "2XL": 6, "3XL": 7, "4XL": 8,
+};
+
+function sortSizes(values: string[]): string[] {
+  return [...values].sort((a, b) => {
+    const aOrder = SIZE_ORDER[a.toUpperCase()];
+    const bOrder = SIZE_ORDER[b.toUpperCase()];
+    if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder;
+    if (aOrder !== undefined) return -1;
+    if (bOrder !== undefined) return 1;
+    const aNum = parseFloat(a), bNum = parseFloat(b);
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+    return a.localeCompare(b);
+  });
+}
+
 export default function ProductDetail() {
   const { handle } = useParams();
   const { addItem, isLoading: cartLoading } = useCartStore();
@@ -155,7 +173,7 @@ export default function ProductDetail() {
                     )}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {opt.values.map(val => (
+                    {(isSizeOpt ? sortSizes(opt.values) : opt.values).map(val => (
                       <button
                         key={val}
                         onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
