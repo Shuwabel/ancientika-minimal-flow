@@ -1,57 +1,98 @@
 
 
-## Store Contact Form Submissions in the Backend
+## Plan: Fix Product Cards, Category Filtering, and Add Wishlist
 
-### What we are building
-Right now, the Contact page form only shows a toast message but does not actually save the submission anywhere. We will create a database table to store all contact form messages so you never lose a customer inquiry.
+### Issues Identified
 
-### What gets stored
-- **Contact messages**: name, email, and message from the Contact page form
+1. **Categories don't filter** -- The Shop page currently shows ALL products in every category. The Shopify query doesn't fetch `productType`, and the filter logic on line 26 of `Shop.tsx` literally says `return true` (no filtering).
 
-(The newsletter subscribers table is already set up and working.)
+2. **Hover overlay is too intrusive** -- The current `ProductCard` has a full-width overlay that slides up and covers the product image when hovered. This needs to be replaced with subtle icon buttons.
 
-### Steps
+3. **No wishlist functionality** -- Need heart icon and cart icon on the top-right of each card, with a popover for quick add-to-cart.
 
-1. **Create a `contact_messages` table** in the database with:
-   - Name, email, and message fields
-   - Timestamp for when the message was sent
-   - Security policies allowing anyone to submit a message, but preventing public read access (just like the newsletter table)
+---
 
-2. **Update the Contact page** (`src/pages/Contact.tsx`):
-   - Connect the form to the database so messages are actually saved
-   - Add email validation before submitting
-   - Add a loading spinner on the submit button while saving
-   - Show proper success/error toast messages using `sonner`
+### 1. Fix Category Filtering from Shopify
 
-### Technical details
+**Update `src/lib/shopify.ts`**
 
-**Database migration:**
-```sql
-CREATE TABLE public.contact_messages (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  message TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
+- Add `productType` to the GraphQL product query so Shopify returns the product type field (e.g., "Tops", "Bottoms")
+- Update the `ShopifyProduct` type to include `productType: string`
 
-ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
+**Update `src/pages/Shop.tsx`**
 
-CREATE POLICY "Anyone can submit a message"
-  ON public.contact_messages
-  FOR INSERT
-  WITH CHECK (true);
+- Replace the `return true` filter with actual logic that matches the selected category slug against the product's `productType` (case-insensitive)
+- Map collection slugs to Shopify product types: "tops" matches "Tops", "bottoms" matches "Bottoms", etc.
 
-CREATE POLICY "No public read access"
-  ON public.contact_messages
-  FOR SELECT
-  USING (false);
+---
+
+### 2. Redesign Product Card Hover Interaction
+
+**Update `src/components/ProductCard.tsx`**
+
+Remove the current full-overlay `AnimatePresence` block entirely. Replace with:
+
+- **Heart icon** (top-right, upper position) -- appears on hover with a subtle fade-in. Clicking toggles wishlist state (filled/unfilled heart).
+- **Cart icon** (top-right, below heart) -- appears on hover. Clicking opens a small popover/dropdown anchored to the icon, containing size/color selectors and an "Add to Cart" button.
+- The product image still has the subtle `scale-105` zoom on hover (already exists).
+- Icons use `absolute` positioning within the image container, not an overlay covering the image.
+
+---
+
+### 3. Add Wishlist Store
+
+**New file: `src/stores/wishlistStore.ts`**
+
+A Zustand store with `localStorage` persistence (same pattern as cart store):
+
+- `items`: Array of product IDs in the wishlist
+- `toggleItem(productId)`: Add or remove from wishlist
+- `isInWishlist(productId)`: Check if a product is wishlisted
+- Simple toggle -- no backend needed for now
+
+---
+
+### 4. Quick Add-to-Cart Popover
+
+**New file: `src/components/QuickAddPopover.tsx`**
+
+A Popover component (using the existing Radix popover) anchored to the cart icon on the product card:
+
+- Shows size and color selectors (same option buttons as the current overlay, but in a compact popover)
+- Filters out "Default Title" options
+- Has an "Add to Cart" button
+- Closes after adding to cart
+- Compact design -- does not cover the product image
+
+---
+
+### 5. Integration Points
+
+**Product Card layout (after changes):**
+
+```text
++---------------------------+
+|  [product image]    [heart icon] |
+|                     [cart icon]  |
+|                                  |
++---------------------------+
+  Product Title
+  Price
 ```
 
-**Frontend changes (`src/pages/Contact.tsx`):**
-- Import `supabase` client and `toast` from `sonner`
-- Add input validation (email format, field length limits)
-- Insert form data into `contact_messages` table on submit
-- Add `submitting` loading state with `Loader2` spinner on button
-- Handle success and error responses with toast notifications
+- Icons only visible on hover (desktop) or always visible (mobile)
+- Heart icon: outline when not wishlisted, filled when wishlisted
+- Cart icon: clicking opens the QuickAddPopover beside/below the icon
+
+---
+
+### Files Summary
+
+| Action | File |
+|--------|------|
+| Create | `src/stores/wishlistStore.ts` |
+| Create | `src/components/QuickAddPopover.tsx` |
+| Update | `src/lib/shopify.ts` (add `productType` to query + types) |
+| Update | `src/components/ProductCard.tsx` (replace overlay with icons + popover) |
+| Update | `src/pages/Shop.tsx` (fix category filtering using `productType`) |
 
