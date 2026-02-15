@@ -61,9 +61,11 @@ export const sizeCharts: Record<string, SizeChart> = {
 
 /** Map a Shopify productType to our size chart category key */
 export function getCategoryFromProductType(productType: string): string | null {
-  const type = productType.toLowerCase();
-  if (type === "tops") return "tops";
-  if (type === "bottoms") return "bottoms";
-  if (type === "outerwear") return "outerwear";
+  const type = productType.toLowerCase().trim();
+  const categories = ["tops", "bottoms", "outerwear"];
+  if (categories.includes(type)) return type;
+  // Handle singular forms: "top" → "tops", "bottom" → "bottoms"
+  const withS = type + "s";
+  if (categories.includes(withS)) return withS;
   return null;
 }

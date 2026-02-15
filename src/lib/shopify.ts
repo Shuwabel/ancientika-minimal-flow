@@ -113,6 +113,7 @@ const PRODUCT_BY_HANDLE_QUERY = `
       title
       description
       handle
+      productType
       availableForSale
       priceRange {
         minVariantPrice { amount currencyCode }
