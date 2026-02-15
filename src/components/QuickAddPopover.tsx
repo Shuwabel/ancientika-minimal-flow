@@ -6,6 +6,24 @@ import { motion } from "framer-motion";
 import { useCartStore } from "@/stores/cartStore";
 import type { ShopifyProduct } from "@/lib/shopify";
 
+const SIZE_ORDER: Record<string, number> = {
+  XXS: 0, XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, XXXL: 7,
+  "2XL": 6, "3XL": 7, "4XL": 8,
+};
+
+function sortSizes(values: string[]): string[] {
+  return [...values].sort((a, b) => {
+    const aOrder = SIZE_ORDER[a.toUpperCase()];
+    const bOrder = SIZE_ORDER[b.toUpperCase()];
+    if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder;
+    if (aOrder !== undefined) return -1;
+    if (bOrder !== undefined) return 1;
+    const aNum = parseFloat(a), bNum = parseFloat(b);
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+    return a.localeCompare(b);
+  });
+}
+
 interface QuickAddPopoverProps {
   product: ShopifyProduct;
   children: React.ReactNode;
@@ -64,7 +82,7 @@ export default function QuickAddPopover({ product, children }: QuickAddPopoverPr
                 {opt.name}
               </p>
               <div className="flex flex-wrap gap-1">
-                {opt.values.map(val => (
+                {(opt.name.toLowerCase() === "size" ? sortSizes(opt.values) : opt.values).map(val => (
                   <button
                     key={val}
                     onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
