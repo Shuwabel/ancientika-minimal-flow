@@ -141,8 +141,6 @@ export default function ProductDetail() {
             {isOnSale && <p className="text-sm text-muted-foreground line-through">{currencySymbol}{compareAt!.toFixed(2)}</p>}
           </div>
 
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8">{product.description}</p>
-
           {/* Options */}
           {product.options
             .filter(opt => !(opt.name === "Title" && opt.values.length === 1 && opt.values[0] === "Default Title"))
@@ -240,6 +238,8 @@ export default function ProductDetail() {
               )}
             </Button>
           </div>
+
+          <p className="text-sm text-muted-foreground leading-relaxed mt-8">{product.description}</p>
         </motion.div>
       </div>
 
