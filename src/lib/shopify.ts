@@ -11,6 +11,7 @@ export interface ShopifyProduct {
     title: string;
     description: string;
     handle: string;
+    productType: string;
     priceRange: {
       minVariantPrice: { amount: string; currencyCode: string };
     };
@@ -75,6 +76,7 @@ const PRODUCTS_QUERY = `
           title
           description
           handle
+          productType
           availableForSale
           priceRange {
             minVariantPrice { amount currencyCode }
