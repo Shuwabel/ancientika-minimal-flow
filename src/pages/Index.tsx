@@ -39,12 +39,16 @@ export default function Index() {
     setEmail("");
   };
 
+  const { data: featuredProducts = [], isLoading: isFeaturedLoading } = useQuery({
+    queryKey: ['shopify-featured-products'],
+    queryFn: () => fetchProducts(4, 'tag:featured'),
+  });
+
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['shopify-products'],
     queryFn: () => fetchProducts(50),
   });
 
-  const featuredProducts = products.slice(0, 4);
   const discountedProducts = products.filter((p) => {
     const compareAt = p.node.compareAtPriceRange?.minVariantPrice?.amount;
     const price = p.node.priceRange.minVariantPrice.amount;
@@ -92,7 +96,7 @@ export default function Index() {
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
             Featured
           </h2>
-          {isLoading ? (
+          {isFeaturedLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="space-y-3">
