@@ -1,98 +1,49 @@
 
 
-## Plan: Fix Product Cards, Category Filtering, and Add Wishlist
+## Plan: Add Wishlist Page, Fix Size Guide, and Fix Quick Add Button
 
-### Issues Identified
+### 1. Create Wishlist Page (`src/pages/Wishlist.tsx`)
 
-1. **Categories don't filter** -- The Shop page currently shows ALL products in every category. The Shopify query doesn't fetch `productType`, and the filter logic on line 26 of `Shop.tsx` literally says `return true` (no filtering).
+A dedicated page at `/wishlist` that displays all wishlisted products:
 
-2. **Hover overlay is too intrusive** -- The current `ProductCard` has a full-width overlay that slides up and covers the product image when hovered. This needs to be replaced with subtle icon buttons.
+- Fetches all Shopify products, then filters to only those whose IDs are in the wishlist store
+- Displays products in a grid using the existing `ProductCard` component
+- Shows an empty state message with a link to the shop when no items are saved
+- Page title: "Wishlist" with the same minimal styling as other pages
 
-3. **No wishlist functionality** -- Need heart icon and cart icon on the top-right of each card, with a popover for quick add-to-cart.
+### 2. Add Wishlist Icon to Header (`src/components/layout/Header.tsx`)
 
----
+- Add a Heart icon next to the Search and Cart icons in the top-right
+- Show a count badge (same style as cart badge) when there are wishlisted items
+- Links to `/wishlist`
 
-### 1. Fix Category Filtering from Shopify
+### 3. Add Wishlist Route (`src/App.tsx`)
 
-**Update `src/lib/shopify.ts`**
+- Import the new Wishlist page and add a route at `/wishlist`
 
-- Add `productType` to the GraphQL product query so Shopify returns the product type field (e.g., "Tops", "Bottoms")
-- Update the `ShopifyProduct` type to include `productType: string`
+### 4. Fix Size Guide on Product Detail
 
-**Update `src/pages/Shop.tsx`**
+**Problem:** The `PRODUCT_BY_HANDLE_QUERY` in `shopify.ts` is missing `productType`, so the product detail page never knows the category, and the Size Guide buttons never appear.
 
-- Replace the `return true` filter with actual logic that matches the selected category slug against the product's `productType` (case-insensitive)
-- Map collection slugs to Shopify product types: "tops" matches "Tops", "bottoms" matches "Bottoms", etc.
+**Fix in `src/lib/shopify.ts`:** Add `productType` field to the `PRODUCT_BY_HANDLE_QUERY` (line ~113, after `availableForSale`).
 
----
+**Fix in `src/lib/size-data.ts`:** Update `getCategoryFromProductType` to handle singular forms -- e.g., "Top" should match "tops". A simple check: if the type without trailing "s" matches a known category prefix, return that category.
 
-### 2. Redesign Product Card Hover Interaction
+### 5. Fix Quick Add Popover on Product Cards
 
-**Update `src/components/ProductCard.tsx`**
+**Problem:** The shopping bag button inside `QuickAddPopover` calls `e.preventDefault()` and `e.stopPropagation()`, which prevents the Radix `PopoverTrigger` from receiving the click event to open the popover.
 
-Remove the current full-overlay `AnimatePresence` block entirely. Replace with:
-
-- **Heart icon** (top-right, upper position) -- appears on hover with a subtle fade-in. Clicking toggles wishlist state (filled/unfilled heart).
-- **Cart icon** (top-right, below heart) -- appears on hover. Clicking opens a small popover/dropdown anchored to the icon, containing size/color selectors and an "Add to Cart" button.
-- The product image still has the subtle `scale-105` zoom on hover (already exists).
-- Icons use `absolute` positioning within the image container, not an overlay covering the image.
-
----
-
-### 3. Add Wishlist Store
-
-**New file: `src/stores/wishlistStore.ts`**
-
-A Zustand store with `localStorage` persistence (same pattern as cart store):
-
-- `items`: Array of product IDs in the wishlist
-- `toggleItem(productId)`: Add or remove from wishlist
-- `isInWishlist(productId)`: Check if a product is wishlisted
-- Simple toggle -- no backend needed for now
-
----
-
-### 4. Quick Add-to-Cart Popover
-
-**New file: `src/components/QuickAddPopover.tsx`**
-
-A Popover component (using the existing Radix popover) anchored to the cart icon on the product card:
-
-- Shows size and color selectors (same option buttons as the current overlay, but in a compact popover)
-- Filters out "Default Title" options
-- Has an "Add to Cart" button
-- Closes after adding to cart
-- Compact design -- does not cover the product image
-
----
-
-### 5. Integration Points
-
-**Product Card layout (after changes):**
-
-```text
-+---------------------------+
-|  [product image]    [heart icon] |
-|                     [cart icon]  |
-|                                  |
-+---------------------------+
-  Product Title
-  Price
-```
-
-- Icons only visible on hover (desktop) or always visible (mobile)
-- Heart icon: outline when not wishlisted, filled when wishlisted
-- Cart icon: clicking opens the QuickAddPopover beside/below the icon
+**Fix in `src/components/ProductCard.tsx`:** Remove `e.preventDefault()` and `e.stopPropagation()` from the shopping bag button's `onClick`. Instead, wrap the entire action icons area in a `div` with `onClick={e => e.preventDefault()}` to prevent the parent `Link` from navigating when interacting with the icons.
 
 ---
 
 ### Files Summary
 
-| Action | File |
-|--------|------|
-| Create | `src/stores/wishlistStore.ts` |
-| Create | `src/components/QuickAddPopover.tsx` |
-| Update | `src/lib/shopify.ts` (add `productType` to query + types) |
-| Update | `src/components/ProductCard.tsx` (replace overlay with icons + popover) |
-| Update | `src/pages/Shop.tsx` (fix category filtering using `productType`) |
-
+| Action | File | What |
+|--------|------|------|
+| Create | `src/pages/Wishlist.tsx` | Wishlist page showing saved products |
+| Update | `src/App.tsx` | Add `/wishlist` route |
+| Update | `src/components/layout/Header.tsx` | Add heart icon with badge linking to wishlist |
+| Update | `src/lib/shopify.ts` | Add `productType` to single-product query |
+| Update | `src/lib/size-data.ts` | Handle singular product types (e.g., "Top") |
+| Update | `src/components/ProductCard.tsx` | Fix click propagation so quick-add popover works |
