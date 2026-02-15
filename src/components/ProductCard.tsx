@@ -36,7 +36,7 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
             <img
               src={imageUrl}
               alt={node.images.edges[0]?.node.altText || node.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No image</div>
