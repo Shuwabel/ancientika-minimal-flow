@@ -1,30 +1,23 @@
 
 
-## Plan: Use Shopify Tags to Control Featured Products
+## Fix Currency Display in Cart Drawer
 
-### How It Works
+The cart drawer currently has two currency issues:
 
-You'll tag products in your Shopify admin with tags like `featured`, `best-seller`, or `new-drop`. The home page will then fetch only those tagged products instead of showing the first 4 from the full catalog.
+1. **Line item prices** (line 78) use a hardcoded `$` symbol
+2. **Total price** (line 89) only maps `USD` to `$`, leaving other currencies like `NGN` showing as raw code (e.g., `NGN45000.00`)
 
-### Managing Your Featured Products
+### Solution
 
-In your Shopify admin, edit any product and add a tag (e.g., `featured`). Remove the tag to take it off the home page. No code changes needed each time.
+Add a small currency formatting helper that maps currency codes to their symbols (e.g., `NGN` to `₦`, `USD` to `$`, `GBP` to `£`, etc.) and use it in both places.
 
-### Technical Changes
+### Technical Details
 
-**1. Update `src/lib/shopify.ts`**
-- Add a new helper function `fetchProductsByTag(tag, first)` that calls the existing `fetchProducts` with a `tag:featured` query filter.
+**File: `src/components/layout/CartDrawer.tsx`**
 
-**2. Update `src/pages/Index.tsx`**
-- Replace the current `products.slice(0, 4)` logic for featured products with a dedicated query: `fetchProducts(4, "tag:featured")`
-- This becomes its own `useQuery` call separate from the full product list (which is still used for the "On Sale" section)
-- If no products have the `featured` tag, the section shows "No products yet" gracefully
+- Add a `getCurrencySymbol` helper function that maps common currency codes to symbols, defaulting to the code itself for unknown currencies
+- **Line 78**: Replace hardcoded `$` with `getCurrencySymbol(item.price.currencyCode)`
+- **Line 89**: Replace the ternary with `getCurrencySymbol(currency)`
 
-### Files Summary
-
-| Action | File | What |
-|--------|------|------|
-| Update | `src/pages/Index.tsx` | Separate query for featured products using tag filter |
-
-Only one file needs changing since `fetchProducts` already supports a `query` parameter.
+This ensures all prices display correctly as `₦45,000.00` instead of `$45000.00`.
 
