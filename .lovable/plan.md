@@ -1,59 +1,24 @@
 
 
-## Pull Collection Images from Shopify
+## Create a New Shopify Store
 
-Currently, the four category tiles on the home page are hardcoded in `src/lib/mock-data.ts` with no images. We'll replace them with real Shopify collections fetched via the Storefront API, including their cover images.
+We'll use Lovable's built-in Shopify integration to create a brand new development store directly from here. This will give you full admin access and seamless syncing.
 
-### Prerequisites
+### How It Works
 
-You'll need to create collections in your Shopify admin (if you haven't already) and assign an image to each one. The collection names should match your categories (Tops, Bottoms, Outerwear, Accessories).
+1. **Enable Shopify** -- I'll trigger the Shopify connection tool, which will prompt you to create a new store
+2. **Store Creation** -- A development/sandbox store will be created automatically, linked to your account
+3. **Add Products** -- Once connected, we can add your clothing products and inventory directly through the integration
+4. **Update Code** -- The storefront code will be updated to point to your new store
 
-### What Changes
+### Important Cost Info
 
-**1. Add a collections query to `src/lib/shopify.ts`**
-- Add a new GraphQL query `COLLECTIONS_QUERY` that fetches collections with their `id`, `title`, `handle`, `description`, and `image { url altText }`
-- Add a `fetchCollections(first)` helper function
-- Add a `ShopifyCollection` TypeScript interface
+- Lovable creates a **sandbox store** for development -- no payment required to start
+- You can develop as long as you want for free
+- When you're ready to sell, prompt **"Claim Store"** to get a **30-day free trial** on a Shopify subscription
+- A paid Shopify subscription is only needed after claiming and after the trial expires
 
-**2. Update `src/pages/Index.tsx`**
-- Replace the static `collections` import with a `useQuery` call to `fetchCollections()`
-- Render each collection tile with its Shopify image as a background
-- Show skeleton loaders while collections load
-- Link each tile to `/shop?category={handle}` using the collection handle
+### Next Step
 
-**3. Clean up `src/lib/mock-data.ts`**
-- Remove the hardcoded `collections` array (no longer needed)
-
-### Technical Details
-
-**GraphQL Query:**
-```graphql
-query GetCollections($first: Int!) {
-  collections(first: $first) {
-    edges {
-      node {
-        id
-        title
-        handle
-        description
-        image {
-          url
-          altText
-        }
-      }
-    }
-  }
-}
-```
-
-**Collection tile rendering:**
-Each tile will display the collection image as a cover background with a gradient overlay at the bottom for the text, keeping the current aspect ratio and hover effects.
-
-### Files Summary
-
-| Action | File | What |
-|--------|------|------|
-| Update | `src/lib/shopify.ts` | Add collections query + fetch helper |
-| Update | `src/pages/Index.tsx` | Fetch and render real collections with images |
-| Update | `src/lib/mock-data.ts` | Remove hardcoded collections array |
+I'll trigger the Shopify setup now. You'll see a button to approve and choose "Create a new store."
 
