@@ -1,38 +1,95 @@
 
 
-# Add Full Clothing Collection to Shopify Store
+# Plan: Collections, Featured Curation, Color Variants & Inventory
 
 ## Overview
-Create a diverse collection of clothing products in your new Ancientika store, priced in NGN between 20,000 and 80,000. Each product will have appropriate size variants (S, M, L, XL) and product types for filtering.
 
-## Products to Create
+This plan covers four changes to your Shopify store: creating proper collections, curating the featured selection, adding color variants to every product, and setting inventory to 2 units per variant.
 
-### Tops (3 products)
-1. **Ethereal Linen Blouse** - 45,000 NGN - Sizes: S, M, L, XL
-2. **Ankara Print Tunic** - 35,000 NGN - Sizes: S, M, L, XL
-3. **Draped Silk Camisole** - 55,000 NGN - Sizes: S, M, L, XL
+---
 
-### Bottoms (3 products)
-4. **Wide-Leg Linen Trousers** - 38,000 NGN - Sizes: S, M, L, XL
-5. **Pleated Maxi Skirt** - 32,000 NGN - Sizes: S, M, L, XL
-6. **Tailored Palazzo Pants** - 42,000 NGN - Sizes: S, M, L, XL
+## 1. Create Collections & Organize Products
 
-### Outerwear (2 products)
-7. **Structured Linen Blazer** - 68,000 NGN - Sizes: S, M, L, XL
-8. **Lightweight Kimono Wrap** - 52,000 NGN - Sizes: S, M, L, XL
+I'll update each product so that the **Shop page category filter** works correctly (it already filters by `productType`, which is set). However, **Shopify Collections** (which appear in the Collections grid on your homepage) need to be created.
 
-## What Will Happen
-- All 8 products will be created directly in your Shopify store using the Shopify tools
-- Each product will have size variants (S, M, L, XL) at the listed price
-- Products will be tagged with "featured" so they appear on the homepage
-- Product types (Tops, Bottoms, Outerwear) will enable category filtering on the Shop page
-- Products will appear immediately on your site once created
+**What I can do via tools:**
+- Update product tags to ensure proper categorization
 
-## Note on Images
-Products will be created without images initially. You can upload product photos by telling me in chat or by adding them through the Shopify admin dashboard.
+**What requires Shopify Admin (since there's no collection-creation tool):**
+- Create 3 Smart Collections in Shopify Admin:
+  - **Tops** -- rule: Product type equals "Tops"
+  - **Bottoms** -- rule: Product type equals "Bottoms"
+  - **Outerwear** -- rule: Product type equals "Outerwear"
+- Delete the premade **"Home page"** collection
 
-## Technical Details
-- Currency is set per-variant in Shopify; NGN pricing will display with the existing currency symbol helper
-- Size options will integrate with the existing size guide and size recommender features
-- The existing `ProductCard`, `Shop`, and `ProductDetail` pages will automatically display the new products
+You can do this at: **Shopify Admin > Products > Collections**. Smart collections will auto-sort products based on product type, so new products you add later will be categorized automatically.
+
+---
+
+## 2. Curate the Featured Selection
+
+Currently all 8 products have the `featured` tag. I'll remove it from 4 products so only a curated set of 4 appears in the homepage Featured section.
+
+**Keep as featured (4 items -- one standout from each category):**
+- Ethereal Linen Blouse (Tops) -- ₦45,000
+- Ankara Print Tunic (Tops) -- ₦35,000
+- Pleated Maxi Skirt (Bottoms) -- ₦32,000
+- Structured Linen Blazer (Outerwear) -- ₦68,000
+
+**Remove `featured` tag from:**
+- Draped Silk Camisole
+- Wide-Leg Linen Trousers
+- Tailored Palazzo Pants
+- Lightweight Kimono Wrap
+
+This will be done by updating each product's tags via the `update_shopify_product` tool.
+
+---
+
+## 3. Add Color Variants
+
+Each product currently has only a **Size** option (S, M, L, XL). I'll add a **Color** option to each product with 2-3 colors appropriate for the item, then create the corresponding size+color variant combinations.
+
+Proposed colors per product:
+
+| Product | Colors |
+|---|---|
+| Ethereal Linen Blouse | Ivory, Sand |
+| Ankara Print Tunic | Indigo, Terracotta |
+| Draped Silk Camisole | Black, Champagne |
+| Wide-Leg Linen Trousers | Oat, Charcoal |
+| Pleated Maxi Skirt | Olive, Burgundy |
+| Tailored Palazzo Pants | Ivory, Black |
+| Structured Linen Blazer | Sand, Navy |
+| Lightweight Kimono Wrap | Sage, Terracotta |
+
+Each product will go from 4 variants (4 sizes x 1 color) to 8 variants (4 sizes x 2 colors).
+
+This requires:
+1. Updating each product's options to include both Size and Color
+2. Recreating variants for each size+color combination
+
+---
+
+## 4. Set Inventory (2 Stock Per Variant)
+
+Inventory levels cannot be set through the available Shopify tools. After I create the color variants, you'll need to set inventory in **Shopify Admin > Products > [Product] > Inventory** to 2 units per variant. Alternatively, you can use the bulk editor to set all variants to 2 at once.
+
+---
+
+## Execution Order
+
+1. Remove `featured` tag from 4 products (4 update calls)
+2. Update all 8 products to add Color option and new variants (8 update calls + variant creation calls)
+3. You create 3 Smart Collections and delete "Home page" collection in Shopify Admin
+4. You set inventory to 2 per variant in Shopify Admin
+
+---
+
+## Technical Notes
+
+- The Shop page already filters by `productType` so collection-based filtering will continue to work
+- The homepage Featured section already queries `tag:featured` so reducing the tagged products will immediately show fewer items
+- The product detail page and cart already support multi-option variants (Size + Color), so no frontend code changes are needed
+- Each `update_shopify_product` call will require your approval before executing
 
