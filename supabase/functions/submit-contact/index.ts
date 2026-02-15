@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from("contact_messages").insert({ name, email, message });
 
     if (error) {
-      console.error("DB insert error:", error.code);
+      console.error("DB insert error occurred");
       return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -81,7 +81,7 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
+      console.error("Required API key is not configured");
       return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
         status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -131,7 +131,7 @@ Rules:
     });
 
     if (!response.ok) {
-      console.error("AI gateway error:", response.status);
+      console.error("AI gateway request failed");
       const retryStatus = response.status === 429 ? 429 : 503;
       return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
         status: retryStatus,
@@ -160,7 +160,7 @@ Rules:
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("size-recommender error:", e);
+    console.error("size-recommender: unexpected error");
     return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
       status: 503,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
