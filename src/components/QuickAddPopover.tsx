@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { ShoppingBag, Loader2, Zap } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import { useSizeStore } from "@/stores/sizeStore";
+import { getCategoryFromProductType } from "@/lib/size-data";
 import type { ShopifyProduct } from "@/lib/shopify";
+import { buyNow } from "@/lib/shopify";
 
 const SIZE_ORDER: Record<string, number> = {
   XXS: 0, XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, XXXL: 7,
@@ -32,12 +34,23 @@ interface QuickAddPopoverProps {
 export default function QuickAddPopover({ product, children }: QuickAddPopoverProps) {
   const [open, setOpen] = useState(false);
   const { addItem, isLoading } = useCartStore();
+  const { getRecommendation } = useSizeStore();
+  const [buyingNow, setBuyingNow] = useState(false);
   const node = product.node;
   const firstVariant = node.variants.edges[0]?.node;
 
+  const productCategory = getCategoryFromProductType(node.productType || "");
+  const recommendedSize = productCategory ? getRecommendation(productCategory) : null;
+
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     const defaults: Record<string, string> = {};
-    node.options.forEach(opt => { defaults[opt.name] = opt.values[0]; });
+    node.options.forEach(opt => {
+      if (opt.name.toLowerCase() === "size" && recommendedSize && opt.values.includes(recommendedSize)) {
+        defaults[opt.name] = recommendedSize;
+      } else {
+        defaults[opt.name] = opt.values[0];
+      }
+    });
     return defaults;
   });
 
@@ -61,6 +74,28 @@ export default function QuickAddPopover({ product, children }: QuickAddPopoverPr
     setOpen(false);
   };
 
+  const handleBuyNow = async () => {
+    const variant = getSelectedVariant();
+    if (!variant || !node.availableForSale) return;
+    setBuyingNow(true);
+    try {
+      const checkoutUrl = await buyNow({
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        quantity: 1,
+        selectedOptions: variant.selectedOptions,
+      });
+      if (checkoutUrl) {
+        window.open(checkoutUrl, '_blank');
+      }
+      setOpen(false);
+    } finally {
+      setBuyingNow(false);
+    }
+  };
+
   const visibleOptions = node.options.filter(
     opt => !(opt.name === "Title" && opt.values.length === 1 && opt.values[0] === "Default Title")
   );
@@ -76,38 +111,61 @@ export default function QuickAddPopover({ product, children }: QuickAddPopoverPr
         onClick={(e) => e.stopPropagation()}
       >
         {visibleOptions.length > 0 ? (
-          visibleOptions.map(opt => (
-            <div key={opt.name} className="mb-2.5">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
-                {opt.name}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {(opt.name.toLowerCase() === "size" ? sortSizes(opt.values) : opt.values).map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
-                    className={`h-6 min-w-[1.75rem] px-1.5 text-[10px] border rounded-sm transition-colors ${
-                      selectedOptions[opt.name] === val
-                        ? "border-foreground bg-primary text-primary-foreground"
-                        : "border-border hover:border-foreground"
-                    }`}
-                  >
-                    {val}
-                  </button>
-                ))}
+          visibleOptions.map(opt => {
+            const isSizeOpt = opt.name.toLowerCase() === "size";
+            return (
+              <div key={opt.name} className="mb-2.5">
+                <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+                  {opt.name}
+                  {isSizeOpt && recommendedSize && selectedOptions[opt.name] === recommendedSize && (
+                    <span className="ml-1 text-accent normal-case tracking-normal">✓</span>
+                  )}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {(isSizeOpt ? sortSizes(opt.values) : opt.values).map(val => (
+                    <button
+                      key={val}
+                      onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
+                      className={`relative h-6 min-w-[1.75rem] px-1.5 text-[10px] border rounded-sm transition-colors ${
+                        selectedOptions[opt.name] === val
+                          ? "border-foreground bg-primary text-primary-foreground"
+                          : "border-border hover:border-foreground"
+                      }`}
+                    >
+                      {val}
+                      {isSizeOpt && recommendedSize === val && (
+                        <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-accent" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : null}
-        <Button
-          size="sm"
-          className="w-full uppercase tracking-[0.1em] text-[10px] gap-1.5 h-7"
-          disabled={isLoading}
-          onClick={handleAdd}
-        >
-          {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShoppingBag className="h-3 w-3" />}
-          Add to Cart
-        </Button>
+        <div className="flex flex-col gap-1.5">
+          <Button
+            size="sm"
+            className="w-full uppercase tracking-[0.1em] text-[10px] gap-1.5 h-7"
+            disabled={isLoading}
+            onClick={handleAdd}
+          >
+            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShoppingBag className="h-3 w-3" />}
+            Add to Cart
+          </Button>
+          {node.availableForSale && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full uppercase tracking-[0.1em] text-[10px] gap-1.5 h-7"
+              disabled={buyingNow}
+              onClick={handleBuyNow}
+            >
+              {buyingNow ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+              Buy Now
+            </Button>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
