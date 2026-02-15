@@ -22,10 +22,13 @@ export default function Shop() {
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (search && !p.node.title.toLowerCase().includes(search.toLowerCase())) return false;
-      // Category filtering would need product tags/types from Shopify — for now show all
+      if (categoryParam !== "all") {
+        const productType = (p.node.productType || "").toLowerCase();
+        if (productType !== categoryParam.toLowerCase()) return false;
+      }
       return true;
     });
-  }, [products, search]);
+  }, [products, search, categoryParam]);
 
   return (
     <div className="container py-10">
