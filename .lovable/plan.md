@@ -1,59 +1,25 @@
 
 
-## Pull Collection Images from Shopify
+## Blend Product Images Seamlessly with `mix-blend-multiply`
 
-Currently, the four category tiles on the home page are hardcoded in `src/lib/mock-data.ts` with no images. We'll replace them with real Shopify collections fetched via the Storefront API, including their cover images.
-
-### Prerequisites
-
-You'll need to create collections in your Shopify admin (if you haven't already) and assign an image to each one. The collection names should match your categories (Tops, Bottoms, Outerwear, Accessories).
+The "Knitwear Prime" product image still shows a white rectangular background that contrasts with the beige page. We'll apply a CSS blending mode to make white pixels transparent.
 
 ### What Changes
 
-**1. Add a collections query to `src/lib/shopify.ts`**
-- Add a new GraphQL query `COLLECTIONS_QUERY` that fetches collections with their `id`, `title`, `handle`, `description`, and `image { url altText }`
-- Add a `fetchCollections(first)` helper function
-- Add a `ShopifyCollection` TypeScript interface
+**File: `src/components/ProductCard.tsx` (line 36)**
 
-**2. Update `src/pages/Index.tsx`**
-- Replace the static `collections` import with a `useQuery` call to `fetchCollections()`
-- Render each collection tile with its Shopify image as a background
-- Show skeleton loaders while collections load
-- Link each tile to `/shop?category={handle}` using the collection handle
+- Add `mix-blend-multiply` Tailwind class to the product `<img>` element
+- This CSS property makes white areas blend into whatever background color is behind them, effectively making them "transparent"
 
-**3. Clean up `src/lib/mock-data.ts`**
-- Remove the hardcoded `collections` array (no longer needed)
+### Before vs After
 
-### Technical Details
+- **Before**: White rectangle visible around product photo
+- **After**: Product sits naturally on the beige background with no visible box
 
-**GraphQL Query:**
-```graphql
-query GetCollections($first: Int!) {
-  collections(first: $first) {
-    edges {
-      node {
-        id
-        title
-        handle
-        description
-        image {
-          url
-          altText
-        }
-      }
-    }
-  }
-}
-```
+### Notes
 
-**Collection tile rendering:**
-Each tile will display the collection image as a cover background with a gradient overlay at the bottom for the text, keeping the current aspect ratio and hover effects.
-
-### Files Summary
-
-| Action | File | What |
-|--------|------|------|
-| Update | `src/lib/shopify.ts` | Add collections query + fetch helper |
-| Update | `src/pages/Index.tsx` | Fetch and render real collections with images |
-| Update | `src/lib/mock-data.ts` | Remove hardcoded collections array |
+- Single CSS class addition, no structural changes
+- Applies to all ProductCard instances (Featured, Shop page, etc.)
+- Images with colored/styled backgrounds (like the collection tiles) are in a different component, so they won't be affected
+- For best long-term results, you can also re-upload product photos with true transparent (PNG) backgrounds in Shopify
 
