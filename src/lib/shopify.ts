@@ -151,6 +151,38 @@ export async function fetchProductByHandle(handle: string): Promise<ShopifyProdu
   return data?.data?.productByHandle || null;
 }
 
+// Collections
+export interface ShopifyCollection {
+  node: {
+    id: string;
+    title: string;
+    handle: string;
+    description: string;
+    image: { url: string; altText: string | null } | null;
+  };
+}
+
+const COLLECTIONS_QUERY = `
+  query GetCollections($first: Int!) {
+    collections(first: $first) {
+      edges {
+        node {
+          id
+          title
+          handle
+          description
+          image { url altText }
+        }
+      }
+    }
+  }
+`;
+
+export async function fetchCollections(first = 10): Promise<ShopifyCollection[]> {
+  const data = await storefrontApiRequest(COLLECTIONS_QUERY, { first });
+  return data?.data?.collections?.edges || [];
+}
+
 // Cart mutations
 const CART_QUERY = `query cart($id: ID!) { cart(id: $id) { id totalQuantity } }`;
 

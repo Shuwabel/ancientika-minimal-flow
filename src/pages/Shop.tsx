@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
-import { collections } from "@/lib/mock-data";
-import { fetchProducts } from "@/lib/shopify";
+import { fetchProducts, fetchCollections } from "@/lib/shopify";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,6 +18,11 @@ export default function Shop() {
     queryFn: () => fetchProducts(50),
   });
 
+  const { data: collections = [] } = useQuery({
+    queryKey: ['shopify-collections'],
+    queryFn: () => fetchCollections(10),
+  });
+
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (search && !p.node.title.toLowerCase().includes(search.toLowerCase())) return false;
@@ -30,6 +34,10 @@ export default function Shop() {
     });
   }, [products, search, categoryParam]);
 
+  const categoryTitle = categoryParam === "all"
+    ? "All Products"
+    : collections.find((c) => c.node.handle === categoryParam)?.node.title || categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1);
+
   return (
     <div className="container py-10">
       <motion.h1
@@ -37,9 +45,7 @@ export default function Shop() {
         animate={{ opacity: 1 }}
         className="text-3xl md:text-4xl font-light text-center mb-10"
       >
-        {categoryParam === "all"
-          ? "All Products"
-          : collections.find((c) => c.slug === categoryParam)?.name || "Shop"}
+        {categoryTitle}
       </motion.h1>
 
       {/* Filters */}
@@ -73,7 +79,7 @@ export default function Shop() {
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             {collections.map((col) => (
-              <SelectItem key={col.slug} value={col.slug}>{col.name}</SelectItem>
+              <SelectItem key={col.node.handle} value={col.node.handle}>{col.node.title}</SelectItem>
             ))}
           </SelectContent>
         </Select>

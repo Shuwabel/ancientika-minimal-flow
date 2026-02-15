@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Menu, ChevronDown, Heart } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
-import { collections } from "@/lib/mock-data";
+import { fetchCollections } from "@/lib/shopify";
+import { useQuery } from "@tanstack/react-query";
 import mochaLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState } from "react";
@@ -16,6 +17,11 @@ export default function Header() {
   const isHomePage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+
+  const { data: collections = [] } = useQuery({
+    queryKey: ['shopify-collections'],
+    queryFn: () => fetchCollections(10),
+  });
 
   const handleNav = (to: string) => {
     setSidebarOpen(false);
@@ -49,8 +55,8 @@ export default function Header() {
                   <div className="flex flex-col pl-4">
                     <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
                     {collections.map((col) => (
-                      <button key={col.slug} onClick={() => handleNav(`/shop?category=${col.slug}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
-                        {col.name}
+                      <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
+                        {col.node.title}
                       </button>
                     ))}
                   </div>

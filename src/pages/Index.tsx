@@ -5,8 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
-import { collections } from "@/lib/mock-data";
-import { fetchProducts } from "@/lib/shopify";
+import { fetchProducts, fetchCollections } from "@/lib/shopify";
 import { Skeleton } from "@/components/ui/skeleton";
 import collectionsBg from "@/assets/collections-bg.jpg";
 import { useState } from "react";
@@ -40,6 +39,11 @@ export default function Index() {
     setEmail("");
     setShowPopup(false);
   };
+
+  const { data: shopifyCollections = [], isLoading: isCollectionsLoading } = useQuery({
+    queryKey: ['shopify-collections'],
+    queryFn: () => fetchCollections(10),
+  });
 
   const { data: featuredProducts = [], isLoading: isFeaturedLoading } = useQuery({
     queryKey: ['shopify-featured-products'],
@@ -173,19 +177,34 @@ export default function Index() {
       <section className="relative py-20 overflow-hidden bg-card">
         <div className="container relative">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {collections.map((col, i) => (
-              <motion.div key={col.slug} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                <Link to={`/shop?category=${col.slug}`} className="block aspect-[3/4] bg-card/80 backdrop-blur-sm rounded-sm relative group overflow-hidden border border-border/50">
-                  <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p className="text-sm font-medium">{col.name}</p>
-                    <p className="text-xs text-muted-foreground">{col.description}</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+          {isCollectionsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="aspect-[3/4] w-full rounded-sm" />
+              ))}
+            </div>
+          ) : shopifyCollections.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {shopifyCollections.map((col, i) => (
+                <motion.div key={col.node.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                  <Link to={`/shop?category=${col.node.handle}`} className="block aspect-[3/4] rounded-sm relative group overflow-hidden border border-border/50">
+                    {col.node.image ? (
+                      <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="absolute inset-0 bg-card/80" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <p className="text-sm font-medium text-white">{col.node.title}</p>
+                      {col.node.description && <p className="text-xs text-white/70 line-clamp-1">{col.node.description}</p>}
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground text-sm py-10">No collections yet</p>
+          )}
         </div>
       </section>
 
