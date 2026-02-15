@@ -1,1 +1,4 @@
 project_id = "mcopjljzaflnsrnyhdgl"
+
+[functions.size-recommender]
+verify_jwt = false
