@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Search, Menu, ChevronDown } from "lucide-react";
+import { ShoppingBag, Search, Menu, ChevronDown, Heart } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { collections } from "@/lib/mock-data";
 import mochaLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -9,6 +10,7 @@ import { useState } from "react";
 export default function Header() {
   const totalItems = useCartStore(s => s.items.reduce((sum, i) => sum + i.quantity, 0));
   const setIsOpen = useCartStore(s => s.setIsOpen);
+  const wishlistCount = useWishlistStore(s => s.items.length);
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
@@ -71,6 +73,14 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
             <Search className="h-5 w-5" />
+          </Link>
+          <Link to="/wishlist" className="p-2 hover:text-accent transition-colors relative" aria-label="Wishlist">
+            <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-medium">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
           <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
             <ShoppingBag className="h-5 w-5" />

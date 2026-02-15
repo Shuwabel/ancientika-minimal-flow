@@ -61,13 +61,10 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="absolute top-2 right-2 flex flex-col gap-1.5 z-10"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
               >
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleItem(node.id);
-                  }}
+                  onClick={() => toggleItem(node.id)}
                   className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-background transition-colors"
                 >
                   <Heart
@@ -78,10 +75,6 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
                 {node.availableForSale && (
                   <QuickAddPopover product={product}>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
                       className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-background transition-colors"
                     >
                       <ShoppingBag className="h-4 w-4 text-foreground" />
