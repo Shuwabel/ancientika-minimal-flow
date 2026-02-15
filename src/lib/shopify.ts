@@ -1,9 +1,7 @@
 import { toast } from "sonner";
 
-const SHOPIFY_API_VERSION = '2025-07';
-const SHOPIFY_STORE_PERMANENT_DOMAIN = 'ancientika-z1ujy.myshopify.com';
-const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
-const SHOPIFY_STOREFRONT_TOKEN = 'ef5d67d46e7b0d769bd3a80627df7493';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SHOPIFY_PROXY_URL = `${SUPABASE_URL}/functions/v1/shopify-storefront`;
 
 export interface ShopifyProduct {
   node: {
@@ -39,11 +37,10 @@ export interface ShopifyProduct {
 }
 
 export async function storefrontApiRequest(query: string, variables: Record<string, unknown> = {}) {
-  const response = await fetch(SHOPIFY_STOREFRONT_URL, {
+  const response = await fetch(SHOPIFY_PROXY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });
