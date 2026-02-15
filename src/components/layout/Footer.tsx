@@ -75,7 +75,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="https://www.instagram.com/ancientika?igsh=MXg1Nnp5bmV2aGM0bA=="
+                  href="https://www.instagram.com/ancientika/?utm_source=ig_web_button_share_sheet"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
