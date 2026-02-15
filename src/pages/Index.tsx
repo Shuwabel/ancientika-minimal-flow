@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Loader2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 export default function Index() {
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,7 @@ export default function Index() {
     }
     toast.success("You're subscribed! 🎉");
     setEmail("");
+    setShowPopup(false);
   };
 
   const { data: featuredProducts = [], isLoading: isFeaturedLoading } = useQuery({
@@ -59,15 +61,64 @@ export default function Index() {
     <div>
       {/* Sticky Newsletter Banner */}
       <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
-        <a href="/#newsletter" className="animate-marquee whitespace-nowrap flex">
+        <button onClick={() => setShowPopup(true)} className="w-full animate-marquee whitespace-nowrap flex cursor-pointer">
           {[...Array(4)].map((_, i) => (
             <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
               Join our newsletter — First access to new drops and exclusive offers
               <span className="mx-8">✦</span>
             </span>
           ))}
-        </a>
+        </button>
       </div>
+
+      {/* Newsletter Popup */}
+      <AnimatePresence>
+        {showPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowPopup(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative bg-primary text-primary-foreground rounded-lg p-8 mx-4 w-full max-w-md shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowPopup(false)}
+                className="absolute top-3 right-3 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <h3 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-2">Newsletter</h3>
+              <p className="font-display text-2xl mb-2">Stay in the loop</p>
+              <p className="text-sm opacity-70 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
+              <form onSubmit={(e) => { handleSubscribe(e); }} className="space-y-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full bg-primary-foreground/10 border border-primary-foreground/20 rounded-sm px-4 py-3 text-sm placeholder:text-primary-foreground/40 focus:outline-none focus:border-primary-foreground/50 transition-colors"
+                />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="w-full uppercase tracking-[0.1em] text-xs py-3"
+                  disabled={subscribing}
+                >
+                  {subscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Join the list"}
+                </Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero + Featured */}
       <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 overflow-hidden min-h-screen">
