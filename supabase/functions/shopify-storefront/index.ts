@@ -138,6 +138,14 @@ const ALLOWED_QUERIES: Record<string, string> = {
       }
     }
   `,
+  cartBuyerIdentityUpdate: `
+    mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+      cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+        cart { id }
+        userErrors { field message }
+      }
+    }
+  `,
 };
 
 Deno.serve(async (req) => {

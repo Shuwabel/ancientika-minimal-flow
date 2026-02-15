@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Menu, ChevronDown, Heart } from "lucide-react";
+import UserMenu from "@/components/layout/UserMenu";
 import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
 import { fetchCollections } from "@/lib/shopify";
@@ -80,6 +81,7 @@ export default function Header() {
           <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
             <Search className="h-5 w-5" />
           </Link>
+          <UserMenu />
           <Link to="/wishlist" className="p-2 hover:text-accent transition-colors relative" aria-label="Wishlist">
             <Heart className="h-5 w-5" />
             {wishlistCount > 0 && (

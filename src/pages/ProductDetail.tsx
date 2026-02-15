@@ -1,12 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2, Ruler, Sparkles } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2, Ruler, Sparkles, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchProductByHandle, fetchProducts } from "@/lib/shopify";
+import { fetchProductByHandle, fetchProducts, buyNow } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { useSizeStore } from "@/stores/sizeStore";
 import { getCategoryFromProductType } from "@/lib/size-data";
@@ -39,6 +39,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [optionsInitialized, setOptionsInitialized] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['shopify-product', handle],
@@ -128,6 +129,26 @@ export default function ProductDetail() {
       quantity,
       selectedOptions: selectedVariant.selectedOptions,
     });
+  };
+
+  const handleBuyNow = async () => {
+    if (!selectedVariant || !product.availableForSale) return;
+    setBuyingNow(true);
+    try {
+      const checkoutUrl = await buyNow({
+        product: { node: product },
+        variantId: selectedVariant.id,
+        variantTitle: selectedVariant.title,
+        price: selectedVariant.price,
+        quantity,
+        selectedOptions: selectedVariant.selectedOptions,
+      });
+      if (checkoutUrl) {
+        window.open(checkoutUrl, '_blank');
+      }
+    } finally {
+      setBuyingNow(false);
+    }
   };
 
   const hasSizeOption = product.options.some(opt => opt.name.toLowerCase() === "size");
@@ -229,32 +250,52 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Quantity + Add to cart */}
-          <div className="flex gap-3 mt-auto">
-            <div className="flex items-center border border-border rounded-sm">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="w-10 text-center text-sm">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
-                <Plus className="h-3.5 w-3.5" />
-              </button>
+          {/* Quantity + Add to cart + Buy Now */}
+          <div className="flex flex-col gap-2 mt-auto">
+            <div className="flex gap-3">
+              <div className="flex items-center border border-border rounded-sm">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-10 text-center text-sm">{quantity}</span>
+                <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center hover:bg-muted transition-colors">
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <Button
+                size="lg"
+                className="flex-1 uppercase tracking-[0.1em] gap-2"
+                disabled={!product.availableForSale || cartLoading}
+                onClick={handleAddToCart}
+              >
+                {cartLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <ShoppingBag className="h-4 w-4" />
+                    {product.availableForSale ? "Add to Cart" : "Sold Out"}
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              size="lg"
-              className="flex-1 uppercase tracking-[0.1em] gap-2"
-              disabled={!product.availableForSale || cartLoading}
-              onClick={handleAddToCart}
-            >
-              {cartLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <ShoppingBag className="h-4 w-4" />
-                  {product.availableForSale ? "Add to Cart" : "Sold Out"}
-                </>
-              )}
-            </Button>
+            {product.availableForSale && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full uppercase tracking-[0.1em] gap-2"
+                disabled={buyingNow}
+                onClick={handleBuyNow}
+              >
+                {buyingNow ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4" />
+                    Buy Now
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed mt-8">{product.description}</p>

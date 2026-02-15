@@ -56,6 +56,72 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          body_shape: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          fit_preference: string | null
+          gender: string | null
+          height: number | null
+          height_unit: string | null
+          id: string
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          updated_at: string | null
+          user_id: string
+          weight: number | null
+          weight_unit: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          body_shape?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          fit_preference?: string | null
+          gender?: string | null
+          height?: number | null
+          height_unit?: string | null
+          id?: string
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string | null
+          user_id: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          body_shape?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          fit_preference?: string | null
+          gender?: string | null
+          height?: number | null
+          height_unit?: string | null
+          id?: string
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

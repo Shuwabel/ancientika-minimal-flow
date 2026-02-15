@@ -165,3 +165,23 @@ export async function fetchCart(cartId: string) {
   if (!data) return null;
   return data?.data?.cart;
 }
+
+// Buy Now — creates a fresh cart and returns the checkout URL immediately
+export async function buyNow(item: Omit<CartItem, 'lineId'>): Promise<string | null> {
+  const data = await proxyRequest('cartCreate', {
+    input: { lines: [{ quantity: item.quantity, merchandiseId: item.variantId }] },
+  });
+  if (data?.data?.cartCreate?.userErrors?.length > 0) return null;
+  const cart = data?.data?.cartCreate?.cart;
+  if (!cart?.checkoutUrl) return null;
+  return formatCheckoutUrl(cart.checkoutUrl);
+}
+
+// Update buyer identity on a cart (pre-fill email at checkout)
+export async function updateCartBuyerIdentity(cartId: string, email: string) {
+  const data = await proxyRequest('cartBuyerIdentityUpdate', {
+    cartId,
+    buyerIdentity: { email },
+  });
+  return data?.data?.cartBuyerIdentityUpdate?.cart ? true : false;
+}
