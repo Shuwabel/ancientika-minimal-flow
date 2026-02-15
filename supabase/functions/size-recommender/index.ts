@@ -81,8 +81,9 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI service not configured" }), {
-        status: 500,
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -129,24 +130,11 @@ Rules:
       }),
     });
 
-    if (response.status === 429) {
-      return new Response(JSON.stringify({ error: "Service busy, please try again in a moment." }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (response.status === 402) {
-      return new Response(JSON.stringify({ error: "AI service temporarily unavailable." }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     if (!response.ok) {
       console.error("AI gateway error:", response.status);
-      return new Response(JSON.stringify({ error: "Service temporarily unavailable" }), {
-        status: 500,
+      const retryStatus = response.status === 429 ? 429 : 503;
+      return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
+        status: retryStatus,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -173,8 +161,8 @@ Rules:
     });
   } catch (e) {
     console.error("size-recommender error:", e);
-    return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: "Unable to provide size recommendation. Please try again later." }), {
+      status: 503,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
