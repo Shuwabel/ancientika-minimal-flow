@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Loader2, ArrowRight, CheckCircle } from "lucide-react";
+import { Mail, Phone, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [step, setStep] = useState<"form" | "sent">("form");
+
+  const [method, setMethod] = useState<"email" | "phone">("email");
+  const [step, setStep] = useState<"form" | "otp">("form");
+  const [identifier, setIdentifier] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -23,22 +27,58 @@ export default function Auth() {
     if (!authLoading && user) navigate("/account", { replace: true });
   }, [user, authLoading, navigate]);
 
-  const handleSendLink = async (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!identifier.trim()) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: window.location.origin,
-        },
-      });
+      const payload =
+        method === "email"
+          ? { email: identifier.trim() }
+          : { phone: identifier.trim() };
+
+      const { error } = await supabase.auth.signInWithOtp(payload);
       if (error) throw error;
-      setStep("sent");
+      setStep("otp");
+      toast.success("Code sent! Check your " + (method === "email" ? "email" : "phone"));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to send link");
+      toast.error(err instanceof Error ? err.message : "Failed to send code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (otpCode.length !== 6) return;
+    setLoading(true);
+    try {
+      const payload =
+        method === "email"
+          ? { email: identifier.trim(), token: otpCode, type: "email" as const }
+          : { phone: identifier.trim(), token: otpCode, type: "sms" as const };
+
+      const { error } = await supabase.auth.verifyOtp(payload);
+      if (error) throw error;
+      toast.success("Signed in successfully!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Invalid code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    try {
+      const payload =
+        method === "email"
+          ? { email: identifier.trim() }
+          : { phone: identifier.trim() };
+      const { error } = await supabase.auth.signInWithOtp(payload);
+      if (error) throw error;
+      toast.success("Code resent!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend");
     } finally {
       setLoading(false);
     }
@@ -72,7 +112,7 @@ export default function Auth() {
         <p className="text-sm text-muted-foreground text-center mb-8">
           {step === "form"
             ? "Sign in or create an account"
-            : `We sent a sign-in link to ${email}`}
+            : `Enter the 6-digit code sent to ${identifier}`}
         </p>
 
         {step === "form" ? (
@@ -104,45 +144,89 @@ export default function Auth() {
               <Separator className="flex-1" />
             </div>
 
-            {/* Email magic link */}
-            <form onSubmit={handleSendLink} className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
+            {/* Email / Phone tabs */}
+            <Tabs value={method} onValueChange={(v) => { setMethod(v as "email" | "phone"); setIdentifier(""); }}>
+              <TabsList className="w-full">
+                <TabsTrigger value="email" className="flex-1 gap-2">
+                  <Mail className="h-4 w-4" /> Email
+                </TabsTrigger>
+                <TabsTrigger value="phone" className="flex-1 gap-2">
+                  <Phone className="h-4 w-4" /> Phone
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <form onSubmit={handleSendCode} className="space-y-4">
+              {method === "email" ? (
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              )}
               <Button type="submit" className="w-full uppercase tracking-[0.1em] gap-2" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ArrowRight className="h-4 w-4" /> Send sign-in link</>}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ArrowRight className="h-4 w-4" /> Send Code</>}
               </Button>
             </form>
           </div>
         ) : (
-          <div className="text-center space-y-6">
-            <CheckCircle className="h-12 w-12 text-accent mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Click the link in your email to sign in. You can close this tab.
-            </p>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full uppercase tracking-[0.1em]"
-                onClick={() => { setLoading(true); handleSendLink({ preventDefault: () => {} } as React.FormEvent).finally(() => setLoading(false)); }}
-                disabled={loading}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resend link"}
-              </Button>
+          /* OTP verification step */
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              className="w-full uppercase tracking-[0.1em]"
+              onClick={handleVerify}
+              disabled={loading || otpCode.length !== 6}
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+            </Button>
+
+            <div className="flex items-center justify-center gap-4 text-xs">
               <button
                 type="button"
-                onClick={() => { setStep("form"); setEmail(""); }}
-                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={handleResend}
+                disabled={loading}
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Use a different email
+                Resend code
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                type="button"
+                onClick={() => { setStep("form"); setOtpCode(""); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Go back
               </button>
             </div>
           </div>
