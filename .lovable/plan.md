@@ -1,141 +1,94 @@
 
 
-# Plan: Buy Now, User Accounts, and Profile Integration
+# Plan: Google Auth + Email/SMS OTP (Remove Magic Link)
 
 ## Overview
 
-This plan adds three major features: (1) a "Buy Now" button for instant checkout, (2) a user account system with OTP-based authentication, and (3) user profile data that feeds into the AI size recommender.
+Redesign the Auth page to support exactly three sign-in methods:
+1. **Google OAuth** (keep as-is)
+2. **Email OTP** -- 6-digit code sent to email, verified on-page
+3. **SMS OTP** -- 6-digit code sent to phone, verified on-page
+
+The magic link flow and "check your email" screen are removed entirely.
 
 ---
 
-## 1. Buy Now (Instant Checkout)
+## SMS OTP Prerequisite
 
-**How it works:** Creates a brand-new Shopify cart with just the selected item and immediately opens the checkout URL in a new tab -- completely bypassing the existing cart.
+SMS OTP requires a phone provider (e.g. **Twilio**) configured in the backend. You will need:
+- A Twilio account
+- Three secrets: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`
 
-### Changes:
-- **`src/lib/shopify.ts`** -- Add a `buyNow(item)` function that calls `cartCreate` and immediately returns the checkout URL (does NOT touch the cart store)
-- **`src/pages/ProductDetail.tsx`** -- Add a "Buy Now" button next to "Add to Cart" that calls `buyNow()` and opens checkout in a new tab
-- **`src/components/QuickAddPopover.tsx`** -- Optionally add a smaller "Buy Now" link below "Add to Cart"
+We will store these as backend secrets and configure phone auth during implementation.
 
 ---
 
-## 2. User Account System (OTP Login)
+## Auth Page Redesign (`src/pages/Auth.tsx`)
 
-**How it works:** Uses Lovable Cloud's built-in authentication with OTP (magic link/code) sent to email. After sign-in, users can manage their profile.
+### New UI Flow
 
-### Database (Migration):
-```sql
--- Profiles table
-CREATE TABLE public.profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
-  email TEXT,
-  phone TEXT,
-  gender TEXT,
-  height NUMERIC,
-  height_unit TEXT DEFAULT 'cm',
-  weight NUMERIC,
-  weight_unit TEXT DEFAULT 'kg',
-  body_shape TEXT,
-  fit_preference TEXT,
-  address_line1 TEXT,
-  address_line2 TEXT,
-  city TEXT,
-  state TEXT,
-  postal_code TEXT,
-  country TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Users can only read/update their own profile
-CREATE POLICY "Users read own profile" ON public.profiles
-  FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users update own profile" ON public.profiles
-  FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users insert own profile" ON public.profiles
-  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-
--- Auto-create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.profiles (user_id, email)
-  VALUES (NEW.id, NEW.email);
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```text
++---------------------------+
+|   Continue with Google    |
++---------------------------+
+         --- or ---
+  [ Email ]  [ Phone ] tabs
++---------------------------+
+| Email: your@email.com     |
+| -- or --                  |
+| Phone: +1234567890        |
+|        [Send Code]        |
++---------------------------+
+         |  (after send)
+         v
++---------------------------+
+| Enter 6-digit code        |
+| [_][_][_][_][_][_]        |
+|       [Verify]            |
+| Resend code  |  Go back   |
++---------------------------+
 ```
 
-### New Files:
-- **`src/pages/Auth.tsx`** -- OTP login page: user enters email, receives a magic link/code, and is authenticated. Simple single-field form.
-- **`src/pages/Account.tsx`** -- Account dashboard with:
-  - Profile section (email, phone, address fields)
-  - Body measurements section (gender, height, weight, body shape, fit preference)
-  - Sign out button
-- **`src/hooks/useAuth.ts`** -- Auth state hook using `supabase.auth.onAuthStateChange` and `getSession`
-- **`src/components/layout/UserMenu.tsx`** -- User icon in header; links to `/auth` if logged out, or `/account` if logged in
+### State
 
-### Modified Files:
-- **`src/components/layout/Header.tsx`** -- Add User icon between Search and Wishlist icons
-- **`src/App.tsx`** -- Add `/auth` and `/account` routes
-- **`src/components/SizeRecommenderModal.tsx`** -- When a logged-in user completes the size quiz, save their measurements to the `profiles` table. When opening the modal, pre-fill from the profile if available (instead of only using localStorage via sizeStore).
+- `method`: `"email"` | `"phone"` -- active tab
+- `step`: `"form"` | `"otp"` -- input vs verification
+- `identifier`: the email or phone number entered
 
----
+### Key Logic
 
-## 3. Profile Data Feeding Size Recommender
+| Action | API Call |
+|--------|----------|
+| Send email code | `supabase.auth.signInWithOtp({ email })` |
+| Send SMS code | `supabase.auth.signInWithOtp({ phone })` |
+| Verify email code | `supabase.auth.verifyOtp({ email, token, type: 'email' })` |
+| Verify SMS code | `supabase.auth.verifyOtp({ phone, token, type: 'sms' })` |
+| Google sign-in | `lovable.auth.signInWithOAuth("google", ...)` (unchanged) |
 
-When a logged-in user has saved their body measurements in their account profile, the size recommender will:
-- Auto-populate gender, height, weight, body shape, and fit preference from the database profile
-- Skip directly to the result step if all fields are already filled
-- Still allow retaking the quiz to update measurements
+### UI Components Used
 
-This replaces the current localStorage-only approach with a persistent, account-linked solution (while keeping localStorage as fallback for guests).
+- `Tabs` / `TabsList` / `TabsTrigger` from existing tabs component for Email/Phone toggle
+- `InputOTP` / `InputOTPGroup` / `InputOTPSlot` from existing input-otp component for 6-digit entry
+- Phone input accepts international format with `+` prefix
 
----
+### What Gets Removed
 
-## 4. Shopify Checkout Sign-In Sync
-
-Unfortunately, **this is not possible** with the Shopify Storefront API. The checkout URL generated by `cartCreate` opens a guest checkout on Shopify's domain. Shopify maintains its own separate authentication system, and there's no API to pass a customer session token into the headless checkout.
-
-**What we CAN do:** Use the `cartBuyerIdentityUpdate` mutation to pre-fill the customer's email on the checkout page, so they don't have to type it again. This will be added to the `buyNow` and cart checkout flows when the user is logged in.
-
-### Changes for this:
-- **`supabase/functions/shopify-storefront/index.ts`** -- Add `cartBuyerIdentityUpdate` to the query allowlist
-- **`src/lib/shopify.ts`** -- Add `updateCartBuyerIdentity(cartId, email)` function
-- **`src/stores/cartStore.ts`** -- After cart creation, if user is logged in, call `cartBuyerIdentityUpdate` with their email
+- The `"sent"` step (magic link confirmation screen with CheckCircle icon)
+- The "Click the link in your email" messaging
+- The "Resend link" button (replaced by "Resend code")
 
 ---
 
-## Technical Details
+## Files Changed
 
-### New Routes
-| Route | Component | Access |
-|-------|-----------|--------|
-| `/auth` | `Auth.tsx` | Public |
-| `/account` | `Account.tsx` | Authenticated only (redirects to `/auth`) |
+| File | Change |
+|------|--------|
+| `src/pages/Auth.tsx` | Rewrite: replace magic link flow with Email/Phone tabs + OTP verification step |
 
-### Header Icon Order (left to right on right side)
-Search -- User -- Wishlist -- Cart
+## No Other Changes
 
-### Auth Flow
-1. User clicks user icon in header
-2. If not logged in, navigates to `/auth`
-3. User enters email
-4. Calls `supabase.auth.signInWithOtp({ email })`
-5. User receives magic link/code
-6. After verification, redirected to `/account`
-7. Profile auto-created via database trigger
-
-### File Count Summary
-- **New files:** 4 (Auth.tsx, Account.tsx, useAuth.ts, UserMenu.tsx)
-- **Modified files:** 7 (Header, App, shopify.ts, shopify-storefront/index.ts, cartStore, ProductDetail, SizeRecommenderModal)
-- **Database migration:** 1 (profiles table + trigger)
+- `useAuth.ts` -- unchanged
+- `lovable/index.ts` -- unchanged (Google OAuth stays the same)
+- Database -- unchanged (profile trigger already handles new signups)
+- Account page -- unchanged
 
