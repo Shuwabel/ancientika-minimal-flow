@@ -73,7 +73,7 @@ export default function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+        <Link to="/" className="ml-2">
           <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
         </Link>
 
