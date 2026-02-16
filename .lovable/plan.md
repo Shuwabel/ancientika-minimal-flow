@@ -1,94 +1,29 @@
 
 
-# Plan: Google Auth + Email/SMS OTP (Remove Magic Link)
+# Fix: Enable 6-Digit Email OTP (No Template Editor Needed)
 
-## Overview
+## Problem
 
-Redesign the Auth page to support exactly three sign-in methods:
-1. **Google OAuth** (keep as-is)
-2. **Email OTP** -- 6-digit code sent to email, verified on-page
-3. **SMS OTP** -- 6-digit code sent to phone, verified on-page
+The Lovable Cloud Auth Settings UI does not include an email template editor, so the previous instructions were incorrect. We need an alternative approach to switch from magic links to 6-digit OTP codes.
 
-The magic link flow and "check your email" screen are removed entirely.
+## Solution
 
----
+There are two parts to this fix:
 
-## SMS OTP Prerequisite
+### 1. Backend: Update Email OTP Configuration
 
-SMS OTP requires a phone provider (e.g. **Twilio**) configured in the backend. You will need:
-- A Twilio account
-- Three secrets: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`
+The email OTP type needs to be changed from "magiclink" to "otp" in the backend auth configuration. This will be done using the backend auth configuration tool (not a manual UI step). Once configured, `supabase.auth.signInWithOtp({ email })` will automatically send a 6-digit code instead of a magic link.
 
-We will store these as backend secrets and configure phone auth during implementation.
+### 2. No Frontend Changes Needed
 
----
+The current `Auth.tsx` already has the correct verification logic using `supabase.auth.verifyOtp({ email, token, type: 'email' })`, so no code changes are required.
 
-## Auth Page Redesign (`src/pages/Auth.tsx`)
+## Steps
 
-### New UI Flow
-
-```text
-+---------------------------+
-|   Continue with Google    |
-+---------------------------+
-         --- or ---
-  [ Email ]  [ Phone ] tabs
-+---------------------------+
-| Email: your@email.com     |
-| -- or --                  |
-| Phone: +1234567890        |
-|        [Send Code]        |
-+---------------------------+
-         |  (after send)
-         v
-+---------------------------+
-| Enter 6-digit code        |
-| [_][_][_][_][_][_]        |
-|       [Verify]            |
-| Resend code  |  Go back   |
-+---------------------------+
-```
-
-### State
-
-- `method`: `"email"` | `"phone"` -- active tab
-- `step`: `"form"` | `"otp"` -- input vs verification
-- `identifier`: the email or phone number entered
-
-### Key Logic
-
-| Action | API Call |
-|--------|----------|
-| Send email code | `supabase.auth.signInWithOtp({ email })` |
-| Send SMS code | `supabase.auth.signInWithOtp({ phone })` |
-| Verify email code | `supabase.auth.verifyOtp({ email, token, type: 'email' })` |
-| Verify SMS code | `supabase.auth.verifyOtp({ phone, token, type: 'sms' })` |
-| Google sign-in | `lovable.auth.signInWithOAuth("google", ...)` (unchanged) |
-
-### UI Components Used
-
-- `Tabs` / `TabsList` / `TabsTrigger` from existing tabs component for Email/Phone toggle
-- `InputOTP` / `InputOTPGroup` / `InputOTPSlot` from existing input-otp component for 6-digit entry
-- Phone input accepts international format with `+` prefix
-
-### What Gets Removed
-
-- The `"sent"` step (magic link confirmation screen with CheckCircle icon)
-- The "Click the link in your email" messaging
-- The "Resend link" button (replaced by "Resend code")
-
----
+1. Use the Lovable Cloud auth configuration tool to set the email OTP type to code-based (not magic link)
+2. Test the flow to confirm a 6-digit code arrives instead of a clickable link
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/pages/Auth.tsx` | Rewrite: replace magic link flow with Email/Phone tabs + OTP verification step |
-
-## No Other Changes
-
-- `useAuth.ts` -- unchanged
-- `lovable/index.ts` -- unchanged (Google OAuth stays the same)
-- Database -- unchanged (profile trigger already handles new signups)
-- Account page -- unchanged
+None -- this is a backend configuration change only.
 
