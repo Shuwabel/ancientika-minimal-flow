@@ -137,8 +137,8 @@ export default function Index() {
         )}
       </AnimatePresence>
 
-      {/* Hero + Featured */}
-      <section className="relative flex flex-col items-start justify-start pt-16 md:pt-24 overflow-hidden min-h-screen">
+      {/* Hero */}
+      <section className="relative flex items-center justify-center overflow-hidden h-[calc(100svh-4rem)]">
         <img src={collectionsBg} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
         <div className="absolute inset-0 bg-background/60" />
         <motion.div
@@ -158,32 +158,32 @@ export default function Index() {
             </Link>
           </Button>
         </motion.div>
+      </section>
 
-        {/* Featured */}
-        <div className="relative container mt-8 md:mt-12 pb-12">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
-            Featured
-          </h2>
-          {isFeaturedLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="aspect-[3/4] w-full rounded-sm" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.node.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground text-sm py-10">No products yet</p>
-          )}
-        </div>
+      {/* Featured */}
+      <section className="container py-16 md:py-20">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
+          Featured
+        </h2>
+        {isFeaturedLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-sm" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : featuredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.node.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground text-sm py-10">No products yet</p>
+        )}
       </section>
 
       {/* Collections Grid */}
