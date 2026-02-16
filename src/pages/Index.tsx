@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, X } from "lucide-react";
+import { ArrowRight, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,69 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (dir: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const cardWidth = scrollRef.current.querySelector("div")?.offsetWidth || 300;
+    scrollRef.current.scrollBy({ left: dir === "left" ? -cardWidth : cardWidth, behavior: "smooth" });
+  };
+
+  return (
+    <section className="py-16 md:py-20">
+      <div className="container flex items-baseline justify-between mb-8">
+        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">Featured</h2>
+        <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
+          View all
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="container grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-square w-full rounded-sm" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : products.length > 0 ? (
+        <div className="relative group">
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 md:px-[max(1rem,calc((100vw-1280px)/2+1rem))] pb-4 no-scrollbar"
+          >
+            {products.map((product) => (
+              <div key={product.node.id} className="snap-start shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw]">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="container text-center text-muted-foreground text-sm py-10">No products yet</p>
+      )}
+    </section>
+  );
+}
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -161,30 +225,7 @@ export default function Index() {
       </section>
 
       {/* Featured */}
-      <section className="container py-16 md:py-20">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">
-          Featured
-        </h2>
-        {isFeaturedLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[3/4] w-full rounded-sm" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.node.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground text-sm py-10">No products yet</p>
-        )}
-      </section>
+      <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
 
       {/* Collections Grid */}
       <section className="relative py-20 overflow-hidden bg-card">
