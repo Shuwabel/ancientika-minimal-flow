@@ -1,78 +1,47 @@
 
+# Shop Page Toolbar Reorganization and Category Hero Header
 
-# Shop Page Overhaul: Compact Cards, Mobile Quick-Add, Grid Resize, and Enhanced Filters
+## Overview
+Three changes: (1) move search icon to the right side next to grid selector, (2) replace the sort dropdown in the main bar with a category selector and move category out of the filter dropdown, (3) add a hero banner image when a category is selected (like the reference screenshot showing a full-width category image with the category name overlaid).
 
-## 1. Smaller Product Images
+## Changes
 
-**Current**: Product cards use `aspect-[3/4]` (tall portrait), showing fewer items on screen.
+### 1. Toolbar reorder (src/pages/Shop.tsx)
+Current order: `[Search] [Sort: Featured] [Filters] [spacer] [Grid toggle]`
 
-**Change**: Reduce the image aspect ratio to `aspect-square` (1:1) across all views. This makes each card more compact and lets users see more products at once without scrolling.
+New order: `[Category selector] [Filters] [spacer] [Search icon] [Grid toggle]`
 
-**Files**: `src/components/ProductCard.tsx`
+- The **Category** dropdown moves to where "Featured" sort currently sits in the main bar
+- The **Sort** dropdown moves inside the filter dropdown (it was already duplicated there)
+- The **Search** icon moves to the right, just before the grid toggle
+- Remove the duplicate Category selector from inside the filter dropdown (since it's now in the main bar)
 
----
+### 2. Category hero banner (src/pages/Shop.tsx)
+When a specific category is selected (not "all"), display a full-width hero image banner above the toolbar:
+- Use the collection's `image.url` from the Shopify collections data
+- Overlay the category title in large text at the bottom-left (like the reference image showing "T-SHIRTS")
+- Show product count below the banner
+- If no collection image exists or "all" is selected, fall back to the current simple text heading
 
-## 2. Mobile Quick-Add Bottom Sheet
+### 3. Fix mobile grid toggle (src/pages/Shop.tsx)
+The mobile grid toggle currently maps the second button to `gridCols(4)` but `getGridClass` treats non-2 values as `grid-cols-1` on mobile. This is confusing. Fix it so the mobile toggle uses a clearer state (e.g., 1 vs 2 columns mapped properly).
 
-Since hover doesn't work on mobile, we need a persistent, always-visible cart icon on each product card on mobile.
+## Technical Details
 
-**Approach**:
-- Use the `useIsMobile()` hook to detect mobile
-- On mobile: show a small "+" / cart icon button permanently in the bottom-right corner of each product card image
-- When tapped, it opens a **Dialog (modal)** instead of the desktop Popover, containing variant selectors, "Add to Cart", and "Buy Now" buttons (reusing the existing `QuickAddPopover` logic)
-- On desktop: keep the existing hover-to-reveal behavior with the Popover unchanged
+### File: `src/pages/Shop.tsx`
 
-**New file**: `src/components/MobileQuickAdd.tsx` -- a Dialog-based component that reuses the same variant selection and cart logic as `QuickAddPopover`
+**Hero banner section** (replaces the current `motion.h1` title):
+- Find the active collection from `collections` array matching `categoryParam`
+- If collection has an image, render a full-width banner (`aspect-[21/9]` or similar) with dark overlay and category title text
+- Show `"{count} products"` text below the banner
+- When `categoryParam === "all"`, show the simple "All Products" heading as before
 
-**Modified file**: `src/components/ProductCard.tsx` -- conditionally render:
-  - Desktop: existing hover icons + `QuickAddPopover`
-  - Mobile: always-visible "+" button + `MobileQuickAdd` dialog
+**Toolbar reorder**:
+- Remove sort `Select` from main bar (lines 297-307)
+- Move category `Select` to that position
+- Move search icon/input to after the spacer `div`, before grid toggle
+- In the desktop filter dropdown, replace the category selector with the sort selector
+- In the mobile `FilterContent`, keep sort but remove category (since it's in the main bar now)
 
----
-
-## 3. Grid Layout Resize Toggle
-
-Allow users to switch between different grid densities (e.g., 2-column, 3-column, 4-column on desktop; 1-column vs 2-column on mobile).
-
-**Approach**:
-- Add a row of small grid-layout icons (like the reference images) in the filter bar area of `Shop.tsx`
-- Options: 2-col, 3-col, 4-col (desktop) / 1-col, 2-col (mobile)
-- Store selection in local state (or `localStorage` for persistence)
-- The grid `className` on the product list dynamically changes based on the selected layout
-
-**Icons**: Use simple inline SVG grid icons (common pattern: small squares arranged in 2x2, 3x3, 4x4 patterns) or Lucide's `LayoutGrid`, `Grid2x2`, `Grid3x3` icons.
-
-**Modified file**: `src/pages/Shop.tsx`
-
----
-
-## 4. Enhanced Filter Bar (Category View)
-
-When a category is selected, the filter section expands to include these filter options:
-
-- **Sort by**: Featured, Best Selling, Price Low-High, Price High-Low, Newest
-- **Size**: Multi-select checkboxes (S, M, L, XL, etc., derived from product variant options)
-- **Price Range**: Min/Max input or predefined ranges
-- **Availability**: In Stock / Out of Stock toggle
-
-**Approach**:
-- Add filter dropdowns/accordions below the search bar in `Shop.tsx`
-- Sorting is applied via `useMemo` on the filtered products array
-- Size filtering checks each product's `options` array for matching size values
-- Price filtering compares against `priceRange.minVariantPrice.amount`
-- Availability checks `availableForSale`
-- A "Clear Filters" button resets all active filters
-- On mobile, filters collapse into a slide-out Sheet triggered by a "Filter" button
-
-**Modified file**: `src/pages/Shop.tsx`
-
----
-
-## Technical Summary
-
-| File | Action |
-|------|--------|
-| `src/components/ProductCard.tsx` | Reduce image aspect ratio; add mobile-specific always-visible cart button; conditionally render desktop hover vs mobile tap |
-| `src/components/MobileQuickAdd.tsx` | **New** -- Dialog-based variant selector + Add to Cart + Buy Now for mobile |
-| `src/pages/Shop.tsx` | Add grid resize toggle icons; add expanded filter bar (sort, size, price, availability); responsive filter Sheet on mobile |
-
+**Mobile grid fix**:
+- Change the second mobile grid button to use a value that maps to 1 column properly (store as a separate mobile-friendly state or just use `gridCols === 1` check)
