@@ -61,7 +61,7 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
 
           <div
             ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-8 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
           >
             {products.map((product) => (
               <div key={product.node.id} className="snap-start shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw]">
