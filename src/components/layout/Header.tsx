@@ -32,51 +32,54 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-16 items-center justify-between">
-        {/* Hamburger */}
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
-              <Menu className="h-5 w-5" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-56">
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <nav className="flex flex-col gap-1 mt-8">
-              {!isHomePage && (
-                <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                  Home
-                </button>
-              )}
-              <div>
-                <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                  Shop
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
-                </button>
-                {categoriesExpanded && (
-                  <div className="flex flex-col pl-4">
-                    <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
-                    {collections.map((col) => (
-                      <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
-                        {col.node.title}
-                      </button>
-                    ))}
-                  </div>
+        {/* Left: Hamburger + Logo */}
+        <div className="flex items-center gap-2">
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-56">
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <nav className="flex flex-col gap-1 mt-8">
+                {!isHomePage && (
+                  <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                    Home
+                  </button>
                 )}
-              </div>
-              <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                About
-              </button>
-              <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                Contact
-              </button>
-            </nav>
-          </SheetContent>
-        </Sheet>
+                <div>
+                  <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                    Shop
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
+                  </button>
+                  {categoriesExpanded && (
+                    <div className="flex flex-col pl-4">
+                      <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
+                      {collections.map((col) => (
+                        <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
+                          {col.node.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                  About
+                </button>
+                <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                  Contact
+                </button>
+              </nav>
+            </SheetContent>
+          </Sheet>
 
-        <Link to="/" className="ml-2">
-          <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
-        </Link>
+          <Link to="/">
+            <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
+          </Link>
+        </div>
 
+        {/* Right: Icons */}
         <div className="flex items-center gap-3">
           <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
             <Search className="h-5 w-5" />
