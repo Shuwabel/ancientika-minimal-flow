@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["PorshaRichela", "cursive"],
+        sans: ["Inter", "sans-serif"],
         display: ["PorshaRichela", "cursive"],
       },
       colors: {
