@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type SortOption = "featured" | "price-asc" | "price-desc" | "newest" | "title-asc";
-type GridCols = 2 | 3 | 4;
+type GridCols = 1 | 2 | 3 | 4;
 
 const GRID_OPTIONS: { cols: GridCols; icon: React.ReactNode; label: string }[] = [
   { cols: 2, icon: <Grid2x2 className="h-4 w-4" />, label: "2 columns" },
@@ -31,9 +31,10 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 function getGridClass(cols: GridCols, isMobile: boolean) {
   if (isMobile) {
-    return cols === 2 ? "grid-cols-2" : "grid-cols-1";
+    return cols <= 1 ? "grid-cols-1" : "grid-cols-2";
   }
   switch (cols) {
+    case 1: return "grid-cols-1";
     case 2: return "grid-cols-2";
     case 3: return "grid-cols-3";
     case 4: return "grid-cols-4";
@@ -71,6 +72,12 @@ export default function Shop() {
     queryKey: ['shopify-collections'],
     queryFn: () => fetchCollections(10),
   });
+
+  // Active collection for hero
+  const activeCollection = useMemo(() => {
+    if (categoryParam === "all") return null;
+    return collections.find((c) => c.node.handle === categoryParam) || null;
+  }, [collections, categoryParam]);
 
   // Derive available sizes from products
   const availableSizes = useMemo(() => {
@@ -119,7 +126,6 @@ export default function Shop() {
       return true;
     });
 
-    // Sort
     switch (sortBy) {
       case "price-asc":
         result.sort((a, b) => parseFloat(a.node.priceRange.minVariantPrice.amount) - parseFloat(b.node.priceRange.minVariantPrice.amount));
@@ -140,8 +146,9 @@ export default function Shop() {
 
   const categoryTitle = categoryParam === "all"
     ? "All Products"
-    : collections.find((c) => c.node.handle === categoryParam)?.node.title || categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1);
+    : activeCollection?.node.title || categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1);
 
+  // FilterContent for mobile sheet — no category (it's in toolbar), keeps sort
   const FilterContent = () => (
     <div className="space-y-5">
       {/* Sort */}
@@ -154,28 +161,6 @@ export default function Shop() {
           <SelectContent>
             {SORT_OPTIONS.map(opt => (
               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Category */}
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Category</p>
-        <Select
-          value={categoryParam}
-          onValueChange={(value) => {
-            if (value === "all") setSearchParams({});
-            else setSearchParams({ category: value });
-          }}
-        >
-          <SelectTrigger className="w-full text-xs">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            {collections.map((col) => (
-              <SelectItem key={col.node.handle} value={col.node.handle}>{col.node.title}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -245,63 +230,53 @@ export default function Shop() {
 
   return (
     <div className="container py-10">
-      <motion.h1
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-3xl md:text-4xl font-light text-center mb-10"
-      >
-        {categoryTitle}
-      </motion.h1>
+      {/* Category Hero Banner or Simple Title */}
+      {activeCollection?.node.image ? (
+        <div className="relative w-full aspect-[21/9] mb-6 rounded-sm overflow-hidden">
+          <img
+            src={activeCollection.node.image.url}
+            alt={activeCollection.node.image.altText || categoryTitle}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
+            <h1 className="text-2xl md:text-5xl font-light text-white uppercase tracking-wider">
+              {categoryTitle}
+            </h1>
+            <p className="text-white/70 text-xs md:text-sm mt-1">
+              {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <motion.h1
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-3xl md:text-4xl font-light text-center mb-10"
+        >
+          {categoryTitle}
+        </motion.h1>
+      )}
 
       {/* Sticky Toolbar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4 md:-mx-0 md:px-0 pb-3 pt-1 mb-6 space-y-2">
-        {/* Main bar: search icon, sort, filter toggle, grid toggle */}
+        {/* Main bar: [Category] [Filters] [spacer] [Search] [Grid] */}
         <div className="flex items-center gap-2">
-          {/* Search: icon or expanded input */}
-          <AnimatePresence mode="wait">
-            {searchOpen ? (
-              <motion.div
-                key="search-input"
-                initial={{ width: 32 }}
-                animate={{ width: isMobile ? "100%" : 220 }}
-                exit={{ width: 32 }}
-                className="relative flex-shrink-0"
-              >
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..."
-                  className="w-full pl-8 pr-7 py-1.5 bg-card border border-border rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <button
-                  onClick={() => { setSearch(""); setSearchOpen(false); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                >
-                  <X className="h-3 w-3 text-muted-foreground" />
-                </button>
-              </motion.div>
-            ) : (
-              <button
-                key="search-icon"
-                onClick={() => setSearchOpen(true)}
-                className="h-8 w-8 flex items-center justify-center border border-border rounded-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-            )}
-          </AnimatePresence>
-
-          {/* Sort */}
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          {/* Category selector */}
+          <Select
+            value={categoryParam}
+            onValueChange={(value) => {
+              if (value === "all") setSearchParams({});
+              else setSearchParams({ category: value });
+            }}
+          >
             <SelectTrigger className="w-[140px] md:w-[160px] text-xs uppercase tracking-[0.1em] shrink-0 h-8">
-              <SelectValue placeholder="Sort" />
+              <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent className="bg-popover border border-border z-50">
-              {SORT_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              {collections.map((col) => (
+                <SelectItem key={col.node.handle} value={col.node.handle}>{col.node.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -348,6 +323,43 @@ export default function Shop() {
 
           <div className="flex-1" />
 
+          {/* Search icon / expandable input */}
+          <AnimatePresence mode="wait">
+            {searchOpen ? (
+              <motion.div
+                key="search-input"
+                initial={{ width: 32 }}
+                animate={{ width: isMobile ? 140 : 200 }}
+                exit={{ width: 32 }}
+                className="relative shrink-0"
+              >
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full pl-8 pr-7 py-1.5 bg-card border border-border rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <button
+                  onClick={() => { setSearch(""); setSearchOpen(false); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              </motion.div>
+            ) : (
+              <button
+                key="search-icon"
+                onClick={() => setSearchOpen(true)}
+                className="h-8 w-8 flex items-center justify-center border border-border rounded-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            )}
+          </AnimatePresence>
+
           {/* Grid toggle */}
           {!isMobile ? (
             <div className="flex items-center border border-border rounded-sm overflow-hidden shrink-0">
@@ -367,24 +379,24 @@ export default function Shop() {
           ) : (
             <div className="flex items-center border border-border rounded-sm overflow-hidden shrink-0">
               <button
+                onClick={() => setGridCols(1)}
+                title="1 column"
+                className={`p-1.5 transition-colors ${gridCols === 1 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
                 onClick={() => setGridCols(2)}
                 title="2 columns"
                 className={`p-1.5 transition-colors ${gridCols === 2 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <Grid2x2 className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => setGridCols(4)}
-                title="1 column"
-                className={`p-1.5 transition-colors ${gridCols === 4 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
             </div>
           )}
         </div>
 
-        {/* Desktop filter dropdown */}
+        {/* Desktop filter dropdown — sort replaces category here */}
         {!isMobile && (
           <AnimatePresence>
             {filtersOpen && (
@@ -396,21 +408,14 @@ export default function Shop() {
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border">
-                  {/* Category */}
-                  <Select
-                    value={categoryParam}
-                    onValueChange={(value) => {
-                      if (value === "all") setSearchParams({});
-                      else setSearchParams({ category: value });
-                    }}
-                  >
+                  {/* Sort (moved here from main bar) */}
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
                     <SelectTrigger className="w-[140px] text-xs uppercase tracking-[0.1em] h-7">
-                      <SelectValue placeholder="Category" />
+                      <SelectValue placeholder="Sort" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border z-50">
-                      <SelectItem value="all">All</SelectItem>
-                      {collections.map((col) => (
-                        <SelectItem key={col.node.handle} value={col.node.handle}>{col.node.title}</SelectItem>
+                      {SORT_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -479,7 +484,7 @@ export default function Shop() {
 
       {/* Product Grid */}
       {isLoading ? (
-        <div className={`grid ${getGridClass(gridCols, isMobile)} gap-4`}>
+        <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
           {[...Array(8)].map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="aspect-square w-full rounded-sm" />
@@ -491,7 +496,7 @@ export default function Shop() {
       ) : filtered.length === 0 ? (
         <p className="text-center text-muted-foreground py-20">No products found</p>
       ) : (
-        <div className={`grid ${getGridClass(gridCols, isMobile)} gap-4`}>
+        <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
           {filtered.map((product, i) => (
             <motion.div
               key={product.node.id}
