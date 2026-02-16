@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Phone, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Phone, Loader2, ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -11,14 +11,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import CountryCodeSelect from "@/components/CountryCodeSelect";
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [method, setMethod] = useState<"email" | "phone">("email");
-  const [step, setStep] = useState<"form" | "otp">("form");
+  const [step, setStep] = useState<"form" | "otp" | "magic-link-sent">("form");
   const [identifier, setIdentifier] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryDial, setCountryDial] = useState("+1");
   const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -29,18 +32,27 @@ export default function Auth() {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) return;
     setLoading(true);
     try {
-      const payload =
-        method === "email"
-          ? { email: identifier.trim() }
-          : { phone: identifier.trim() };
-
-      const { error } = await supabase.auth.signInWithOtp(payload);
-      if (error) throw error;
-      setStep("otp");
-      toast.success("Code sent! Check your " + (method === "email" ? "email" : "phone"));
+      if (method === "email") {
+        const email = identifier.trim();
+        if (!email) return;
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        setStep("magic-link-sent");
+        toast.success("Magic link sent! Check your email.");
+      } else {
+        const fullPhone = `${countryDial}${phoneNumber.trim()}`;
+        if (!phoneNumber.trim()) return;
+        const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
+        if (error) throw error;
+        setIdentifier(fullPhone);
+        setStep("otp");
+        toast.success("Code sent! Check your phone.");
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to send code");
     } finally {
@@ -52,12 +64,11 @@ export default function Auth() {
     if (otpCode.length !== 6) return;
     setLoading(true);
     try {
-      const payload =
-        method === "email"
-          ? { email: identifier.trim(), token: otpCode, type: "email" as const }
-          : { phone: identifier.trim(), token: otpCode, type: "sms" as const };
-
-      const { error } = await supabase.auth.verifyOtp(payload);
+      const { error } = await supabase.auth.verifyOtp({
+        phone: identifier.trim(),
+        token: otpCode,
+        type: "sms" as const,
+      });
       if (error) throw error;
       toast.success("Signed in successfully!");
     } catch (err: unknown) {
@@ -70,11 +81,7 @@ export default function Auth() {
   const handleResend = async () => {
     setLoading(true);
     try {
-      const payload =
-        method === "email"
-          ? { email: identifier.trim() }
-          : { phone: identifier.trim() };
-      const { error } = await supabase.auth.signInWithOtp(payload);
+      const { error } = await supabase.auth.signInWithOtp({ phone: identifier.trim() });
       if (error) throw error;
       toast.success("Code resent!");
     } catch (err: unknown) {
@@ -112,6 +119,8 @@ export default function Auth() {
         <p className="text-sm text-muted-foreground text-center mb-8">
           {step === "form"
             ? "Sign in or create an account"
+            : step === "magic-link-sent"
+            ? `We sent a magic link to ${identifier}`
             : `Enter the 6-digit code sent to ${identifier}`}
         </p>
 
@@ -145,7 +154,7 @@ export default function Auth() {
             </div>
 
             {/* Email / Phone tabs */}
-            <Tabs value={method} onValueChange={(v) => { setMethod(v as "email" | "phone"); setIdentifier(""); }}>
+            <Tabs value={method} onValueChange={(v) => { setMethod(v as "email" | "phone"); setIdentifier(""); setPhoneNumber(""); }}>
               <TabsList className="w-full">
                 <TabsTrigger value="email" className="flex-1 gap-2">
                   <Mail className="h-4 w-4" /> Email
@@ -170,25 +179,73 @@ export default function Auth() {
                   />
                 </div>
               ) : (
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="flex">
+                  <CountryCodeSelect value={countryDial} onChange={setCountryDial} />
                   <Input
                     type="tel"
-                    placeholder="+1234567890"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    className="pl-10"
+                    placeholder="Phone number"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="rounded-l-none"
                     required
                   />
                 </div>
               )}
               <Button type="submit" className="w-full uppercase tracking-[0.1em] gap-2" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ArrowRight className="h-4 w-4" /> Send Code</>}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : method === "email" ? (
+                  <><ArrowRight className="h-4 w-4" /> Send Magic Link</>
+                ) : (
+                  <><ArrowRight className="h-4 w-4" /> Send Code</>
+                )}
               </Button>
             </form>
           </div>
+        ) : step === "magic-link-sent" ? (
+          /* Magic link confirmation */
+          <div className="space-y-6 text-center">
+            <div className="flex justify-center">
+              <CheckCircle className="h-12 w-12 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Click the link in your email to sign in. You can close this page.
+            </p>
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const { error } = await supabase.auth.signInWithOtp({
+                      email: identifier.trim(),
+                      options: { emailRedirectTo: window.location.origin },
+                    });
+                    if (error) throw error;
+                    toast.success("Magic link resent!");
+                  } catch (err: unknown) {
+                    toast.error(err instanceof Error ? err.message : "Failed to resend");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Resend link
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                type="button"
+                onClick={() => { setStep("form"); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
         ) : (
-          /* OTP verification step */
+          /* OTP verification step (phone only) */
           <div className="space-y-6">
             <div className="flex justify-center">
               <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
