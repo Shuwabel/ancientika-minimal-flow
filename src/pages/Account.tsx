@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, LogOut, Save } from "lucide-react";
+import { Loader2, LogOut, Save, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSizeStore } from "@/stores/sizeStore";
 import { toast } from "sonner";
+import CountryCodeSelect from "@/components/CountryCodeSelect";
+import { countryCodes } from "@/lib/country-codes";
 
 interface Profile {
   email: string | null;
@@ -36,6 +38,11 @@ export default function Account() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [phoneDial, setPhoneDial] = useState("+1");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const countryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -49,10 +56,34 @@ export default function Account() {
         .select("*")
         .eq("user_id", user.id)
         .single();
-      if (data) setProfile(data as unknown as Profile);
+      if (data) {
+        setProfile(data as unknown as Profile);
+        // Parse phone into dial code + number
+        const phone = (data as any).phone || "";
+        if (phone) {
+          const sorted = [...countryCodes].sort((a, b) => b.dial.length - a.dial.length);
+          const match = sorted.find((c) => phone.startsWith(c.dial));
+          if (match) {
+            setPhoneDial(match.dial);
+            setPhoneNumber(phone.slice(match.dial.length));
+          } else {
+            setPhoneDial("+1");
+            setPhoneNumber(phone);
+          }
+        }
+      }
       setLoading(false);
     })();
   }, [user]);
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (countryRef.current && !countryRef.current.contains(e.target as Node)) setCountryOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const updateField = (field: keyof Profile, value: string | number | null) => {
     setProfile((prev) => prev ? { ...prev, [field]: value } : prev);
@@ -67,7 +98,7 @@ export default function Account() {
         .update({
           first_name: profile.first_name,
           last_name: profile.last_name,
-          phone: profile.phone,
+          phone: `${phoneDial}${phoneNumber}`.trim() || profile.phone,
           gender: profile.gender,
           height: profile.height,
           height_unit: profile.height_unit,
@@ -168,7 +199,16 @@ export default function Account() {
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1 block">Phone</label>
-              <Input value={profile.phone || ""} onChange={(e) => updateField("phone", e.target.value)} placeholder="+234..." />
+              <div className="flex">
+                <CountryCodeSelect value={phoneDial} onChange={setPhoneDial} />
+                <Input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Phone number"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -185,7 +225,49 @@ export default function Account() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Input value={profile.postal_code || ""} onChange={(e) => updateField("postal_code", e.target.value)} placeholder="Postal code" />
-              <Input value={profile.country || ""} onChange={(e) => updateField("country", e.target.value)} placeholder="Country" />
+              <div ref={countryRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => { setCountryOpen(!countryOpen); setCountrySearch(""); }}
+                  className="flex items-center justify-between w-full h-10 px-3 border rounded-md bg-background text-sm hover:bg-accent transition-colors"
+                >
+                  <span className={profile.country ? "text-foreground" : "text-muted-foreground"}>
+                    {profile.country
+                      ? `${countryCodes.find((c) => c.name === profile.country)?.flag || ""} ${profile.country}`
+                      : "Country"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+                {countryOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-auto rounded-md border bg-popover shadow-lg z-50">
+                    <div className="sticky top-0 bg-popover p-2 border-b">
+                      <input
+                        type="text"
+                        placeholder="Search country..."
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        className="w-full px-2 py-1 text-sm rounded border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                        autoFocus
+                      />
+                    </div>
+                    {countryCodes
+                      .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                      .map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => { updateField("country", c.name); setCountryOpen(false); }}
+                          className={`flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors ${
+                            profile.country === c.name ? "bg-accent" : ""
+                          }`}
+                        >
+                          <span className="text-base leading-none">{c.flag}</span>
+                          <span className="flex-1 text-left">{c.name}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
