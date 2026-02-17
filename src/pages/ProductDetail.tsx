@@ -304,11 +304,11 @@ export default function ProductDetail() {
 
       {related.length > 0 && (
         <section className="mt-20 pt-10 border-t border-border">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">You May Also Like</h2>
-          <div className="flex gap-2 md:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar">
+          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-6 text-center">You May Also Like</h2>
+          <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 no-scrollbar">
             {related.map((p) => (
-              <div key={p.node.id} className="snap-start shrink-0 w-[38vw] sm:w-[30vw] md:w-[23vw] lg:w-[22vw]">
-                <ProductCard product={p} />
+              <div key={p.node.id} className="snap-start shrink-0 grow-0" style={{ width: "clamp(150px, 20vw, 240px)" }}>
+                <ProductCard product={p} aspectRatio="1/1" />
               </div>
             ))}
           </div>

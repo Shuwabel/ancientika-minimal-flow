@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Loader2, X } from "lucide-react";
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
@@ -17,15 +17,9 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (dir: "left" | "right") => {
-    if (!scrollRef.current) return;
-    const cardWidth = scrollRef.current.querySelector("div")?.offsetWidth || 300;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -cardWidth : cardWidth, behavior: "smooth" });
-  };
-
   return (
-    <section className="py-16 md:py-20">
-      <div className="flex items-baseline justify-between mb-8 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+    <section className="py-12 md:py-16">
+      <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
         <h2
           className="uppercase font-medium tracking-[0.15em]"
           style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
@@ -38,46 +32,29 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
       </div>
 
       {isLoading ? (
-        <div className="flex gap-4 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-3 shrink-0" style={{ width: "clamp(160px, 22vw, 280px)" }}>
-              <Skeleton className="aspect-[4/5] w-full rounded-sm" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+        <div className="flex gap-3 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="space-y-2 shrink-0" style={{ width: "clamp(150px, 20vw, 240px)" }}>
+              <Skeleton className="aspect-square w-full rounded-sm" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
             </div>
           ))}
         </div>
       ) : products.length > 0 ? (
-        <div className="relative group">
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-2 top-[40%] -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => scroll("right")}
-            className="absolute right-2 top-[40%] -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
-          >
-            {products.map((product) => (
-              <div
-                key={product.node.id}
-                className="snap-start shrink-0 grow-0"
-                style={{ width: "clamp(160px, 22vw, 280px)" }}
-              >
-                <ProductCard product={product} aspectRatio="4/5" />
-              </div>
-            ))}
-          </div>
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
+        >
+          {products.map((product) => (
+            <div
+              key={product.node.id}
+              className="snap-start shrink-0 grow-0"
+              style={{ width: "clamp(150px, 20vw, 240px)" }}
+            >
+              <ProductCard product={product} aspectRatio="1/1" />
+            </div>
+          ))}
         </div>
       ) : (
         <p className="text-center text-muted-foreground text-sm py-10 px-4">No products yet</p>
@@ -188,7 +165,7 @@ export default function Index() {
               <h3 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-2">Newsletter</h3>
               <p className="font-display text-2xl mb-2">Stay in the loop</p>
               <p className="text-sm opacity-70 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
-              <form onSubmit={(e) => { handleSubscribe(e); }} className="space-y-3">
+              <form onSubmit={handleSubscribe} className="space-y-3">
                 <input
                   type="email"
                   value={email}
@@ -237,20 +214,27 @@ export default function Index() {
       {/* Featured */}
       <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
 
-      {/* Collections Grid */}
+      {/* Collections Grid - center aligned */}
       <section className="relative py-20 overflow-hidden bg-card">
         <div className="container relative">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
           {isCollectionsLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex justify-center flex-wrap gap-3">
               {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="aspect-[3/4] w-full rounded-sm" />
+                <Skeleton key={i} className="aspect-square w-[clamp(100px,15vw,160px)] rounded-sm" />
               ))}
             </div>
           ) : shopifyCollections.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
+            <div className="flex justify-center flex-wrap gap-2 md:gap-3">
               {shopifyCollections.map((col, i) => (
-                <motion.div key={col.node.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                <motion.div
+                  key={col.node.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="w-[clamp(100px,15vw,160px)]"
+                >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
                     <div className="aspect-square rounded-sm overflow-hidden border border-border/50 bg-muted">
                       {col.node.image ? (
@@ -274,7 +258,7 @@ export default function Index() {
       {!isLoading && discountedProducts.length > 0 && (
         <section className="container py-20 border-t border-border">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">On Sale</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {discountedProducts.map((product) => (
               <ProductCard key={product.node.id} product={product} />
             ))}
