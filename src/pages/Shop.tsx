@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { SlidersHorizontal, LayoutGrid, Grid2x2, Grid3x3, ChevronDown } from "lucide-react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCollections } from "@/lib/shopify";
@@ -10,36 +10,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type SortOption = "featured" | "price-asc" | "price-desc" | "newest" | "title-asc";
-type GridCols = 1 | 2 | 3 | 4;
-
-const GRID_OPTIONS: { cols: GridCols; icon: React.ReactNode; label: string }[] = [
-  { cols: 2, icon: <Grid2x2 className="h-4 w-4" />, label: "2 columns" },
-  { cols: 3, icon: <Grid3x3 className="h-4 w-4" />, label: "3 columns" },
-  { cols: 4, icon: <LayoutGrid className="h-4 w-4" />, label: "4 columns" },
-];
+type SortOption = "featured" | "price-asc" | "price-desc" | "newest";
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price: Low → High" },
-  { value: "price-desc", label: "Price: High → Low" },
+  { value: "featured", label: "Best selling" },
   { value: "newest", label: "Newest" },
-  { value: "title-asc", label: "Alphabetical" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
 ];
-
-function getGridClass(cols: GridCols, isMobile: boolean) {
-  if (isMobile) {
-    return cols <= 1 ? "grid-cols-1" : "grid-cols-2";
-  }
-  switch (cols) {
-    case 1: return "grid-cols-1";
-    case 2: return "grid-cols-2";
-    case 3: return "grid-cols-3";
-    case 4: return "grid-cols-4";
-  }
-}
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,12 +30,15 @@ export default function Shop() {
 
   const searchQuery = searchParams.get("q") || "";
   const [sortBy, setSortBy] = useState<SortOption>("featured");
-  const [gridCols, setGridCols] = useState<GridCols>(isMobile ? 2 : 4);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [inStockOnly, setInStockOnly] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [showInStock, setShowInStock] = useState(false);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [priceInitialized, setPriceInitialized] = useState(false);
+
+  const [availabilityOpen, setAvailabilityOpen] = useState(true);
+  const [priceOpen, setPriceOpen] = useState(true);
+  const [sizeOpen, setSizeOpen] = useState(true);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['shopify-products'],
@@ -65,16 +50,35 @@ export default function Shop() {
     queryFn: () => fetchCollections(10),
   });
 
-  // Active collection for hero
   const activeCollection = useMemo(() => {
     if (categoryParam === "all") return null;
     return collections.find((c) => c.node.handle === categoryParam) || null;
   }, [collections, categoryParam]);
 
-  // Derive available sizes from products
+  // Max price in current category
+  const maxPriceInCollection = useMemo(() => {
+    const categoryProducts = categoryParam === "all"
+      ? products
+      : products.filter(p => (p.node.productType || "").toLowerCase() === categoryParam.toLowerCase());
+    if (categoryProducts.length === 0) return 100000;
+    return Math.ceil(Math.max(...categoryProducts.map(p => parseFloat(p.node.priceRange.minVariantPrice.amount))));
+  }, [products, categoryParam]);
+
+  // Initialize price range when products load
+  useMemo(() => {
+    if (maxPriceInCollection > 0 && !priceInitialized) {
+      setPriceRange([0, maxPriceInCollection]);
+      setPriceInitialized(true);
+    }
+  }, [maxPriceInCollection, priceInitialized]);
+
+  // Available sizes for current category
   const availableSizes = useMemo(() => {
+    const categoryProducts = categoryParam === "all"
+      ? products
+      : products.filter(p => (p.node.productType || "").toLowerCase() === categoryParam.toLowerCase());
     const sizes = new Set<string>();
-    products.forEach(p => {
+    categoryProducts.forEach(p => {
       p.node.options.forEach(opt => {
         if (opt.name.toLowerCase() === "size") {
           opt.values.forEach(v => sizes.add(v));
@@ -82,7 +86,7 @@ export default function Shop() {
       });
     });
     return Array.from(sizes);
-  }, [products]);
+  }, [products, categoryParam]);
 
   const toggleSize = (size: string) => {
     setSelectedSizes(prev =>
@@ -90,13 +94,14 @@ export default function Shop() {
     );
   };
 
-  const activeFilterCount = selectedSizes.length + (inStockOnly ? 1 : 0) + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0);
+  const activeFilterCount = selectedSizes.length + (showInStock ? 1 : 0) + (showOutOfStock ? 1 : 0) +
+    (priceInitialized && (priceRange[0] > 0 || priceRange[1] < maxPriceInCollection) ? 1 : 0);
 
   const clearFilters = () => {
     setSelectedSizes([]);
-    setInStockOnly(false);
-    setMinPrice("");
-    setMaxPrice("");
+    setShowInStock(false);
+    setShowOutOfStock(false);
+    setPriceRange([0, maxPriceInCollection]);
     setSortBy("featured");
   };
 
@@ -107,14 +112,18 @@ export default function Shop() {
         const productType = (p.node.productType || "").toLowerCase();
         if (productType !== categoryParam.toLowerCase()) return false;
       }
-      if (inStockOnly && !p.node.availableForSale) return false;
+      // Availability
+      if (showInStock && !showOutOfStock && !p.node.availableForSale) return false;
+      if (showOutOfStock && !showInStock && p.node.availableForSale) return false;
+      // Size
       if (selectedSizes.length > 0) {
         const productSizes = p.node.options.find(o => o.name.toLowerCase() === "size")?.values || [];
         if (!selectedSizes.some(s => productSizes.includes(s))) return false;
       }
+      // Price
       const price = parseFloat(p.node.priceRange.minVariantPrice.amount);
-      if (minPrice && price < parseFloat(minPrice)) return false;
-      if (maxPrice && price > parseFloat(maxPrice)) return false;
+      if (priceInitialized && price < priceRange[0]) return false;
+      if (priceInitialized && price > priceRange[1]) return false;
       return true;
     });
 
@@ -125,95 +134,92 @@ export default function Shop() {
       case "price-desc":
         result.sort((a, b) => parseFloat(b.node.priceRange.minVariantPrice.amount) - parseFloat(a.node.priceRange.minVariantPrice.amount));
         break;
-      case "title-asc":
-        result.sort((a, b) => a.node.title.localeCompare(b.node.title));
-        break;
       case "newest":
         result.reverse();
         break;
     }
 
     return result;
-  }, [products, searchQuery, categoryParam, sortBy, selectedSizes, inStockOnly, minPrice, maxPrice]);
+  }, [products, searchQuery, categoryParam, sortBy, selectedSizes, showInStock, showOutOfStock, priceRange, priceInitialized]);
 
   const categoryTitle = categoryParam === "all"
     ? "All Products"
     : activeCollection?.node.title || categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1);
 
-  // FilterContent for mobile sheet — no category (it's in toolbar), keeps sort
-  const FilterContent = () => (
-    <div className="space-y-5">
-      {/* Sort */}
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Sort by</p>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="w-full text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map(opt => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  const formatPrice = (val: number) => `₦${val.toLocaleString()}`;
+
+  // Sidebar filter content (shared between desktop sidebar and mobile sheet)
+  const FilterSidebar = () => (
+    <div className="space-y-1">
+      {/* Availability */}
+      <Collapsible open={availabilityOpen} onOpenChange={setAvailabilityOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-xs uppercase tracking-[0.15em] font-medium text-foreground border-b border-border">
+          Availability
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${availabilityOpen ? "rotate-180" : ""}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 pb-4 space-y-2.5">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox checked={showInStock} onCheckedChange={(c) => setShowInStock(c === true)} className="h-3.5 w-3.5" />
+            <span className="text-xs text-foreground">In stock</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox checked={showOutOfStock} onCheckedChange={(c) => setShowOutOfStock(c === true)} className="h-3.5 w-3.5" />
+            <span className="text-xs text-foreground">Out of stock</span>
+          </label>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Price */}
+      <Collapsible open={priceOpen} onOpenChange={setPriceOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-xs uppercase tracking-[0.15em] font-medium text-foreground border-b border-border">
+          Price
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${priceOpen ? "rotate-180" : ""}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-4 pb-4 space-y-3">
+          <Slider
+            min={0}
+            max={maxPriceInCollection || 100000}
+            step={100}
+            value={priceRange}
+            onValueChange={(val) => setPriceRange(val as [number, number])}
+            className="w-full"
+          />
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>{formatPrice(priceRange[0])}</span>
+            <span>{formatPrice(priceRange[1])}</span>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Size */}
       {availableSizes.length > 0 && (
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Size</p>
-          <div className="flex flex-wrap gap-1.5">
-            {availableSizes.map(size => (
-              <button
-                key={size}
-                onClick={() => toggleSize(size)}
-                className={`h-7 min-w-[2rem] px-2 text-[11px] border rounded-sm transition-colors ${
-                  selectedSizes.includes(size)
-                    ? "border-foreground bg-primary text-primary-foreground"
-                    : "border-border hover:border-foreground"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Collapsible open={sizeOpen} onOpenChange={setSizeOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-xs uppercase tracking-[0.15em] font-medium text-foreground border-b border-border">
+            Size
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${sizeOpen ? "rotate-180" : ""}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3 pb-4">
+            <div className="flex flex-wrap gap-1.5">
+              {availableSizes.map(size => (
+                <button
+                  key={size}
+                  onClick={() => toggleSize(size)}
+                  className={`h-7 min-w-[2rem] px-2 text-[11px] border rounded-sm transition-colors ${
+                    selectedSizes.includes(size)
+                      ? "border-foreground bg-primary text-primary-foreground"
+                      : "border-border hover:border-foreground"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
-      {/* Price range */}
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Price range</p>
-        <div className="flex gap-2 items-center">
-          <input
-            type="number"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-            placeholder="Min"
-            className="w-full py-1.5 px-2 bg-card border border-border rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <span className="text-muted-foreground text-xs">–</span>
-          <input
-            type="number"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            placeholder="Max"
-            className="w-full py-1.5 px-2 bg-card border border-border rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-      </div>
-
-      {/* Availability */}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="in-stock"
-          checked={inStockOnly}
-          onCheckedChange={(checked) => setInStockOnly(checked === true)}
-        />
-        <label htmlFor="in-stock" className="text-xs cursor-pointer">In stock only</label>
-      </div>
-
       {activeFilterCount > 0 && (
-        <Button variant="ghost" size="sm" className="w-full text-xs" onClick={clearFilters}>
+        <Button variant="ghost" size="sm" className="w-full text-xs mt-4 uppercase tracking-[0.1em]" onClick={clearFilters}>
           Clear all filters
         </Button>
       )}
@@ -222,22 +228,19 @@ export default function Shop() {
 
   return (
     <div>
-      {/* Category Hero Banner or Simple Title */}
+      {/* Hero Banner — 50% reduced height */}
       {activeCollection?.node.image ? (
-        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(300px, 45vh, 600px)' }}>
+        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(150px, 22vh, 300px)' }}>
           <img
             src={activeCollection.node.image.url}
             alt={activeCollection.node.image.altText || categoryTitle}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
-            <h1 className="text-2xl md:text-5xl font-light text-white uppercase tracking-wider">
+          <div className="absolute inset-0 flex items-end p-4 md:p-8">
+            <h1 className="text-2xl md:text-4xl font-light text-white uppercase tracking-wider">
               {categoryTitle}
             </h1>
-            <p className="text-white/70 text-xs md:text-sm mt-1">
-              {filtered.length} product{filtered.length !== 1 ? "s" : ""}
-            </p>
           </div>
         </div>
       ) : (
@@ -245,228 +248,96 @@ export default function Shop() {
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-3xl md:text-4xl font-light text-center mb-10"
+            className="text-3xl md:text-4xl font-light text-center mb-6"
           >
             {categoryTitle}
           </motion.h1>
         </div>
       )}
 
-      {/* Sticky Toolbar */}
-      <div className="sticky top-16 z-30 bg-background backdrop-blur-sm border-b border-border px-4 md:px-8 pb-3 pt-1 mb-6 space-y-2">
-        {/* Main bar: [Category] [Filters] [spacer] [Search] [Grid] */}
-        <div className="flex items-center gap-2">
-          {/* Category selector */}
-          <Select
-            value={categoryParam}
-            onValueChange={(value) => {
-              if (value === "all") setSearchParams({});
-              else setSearchParams({ category: value });
-            }}
-          >
-            <SelectTrigger className="w-[140px] md:w-[160px] text-xs uppercase tracking-[0.1em] shrink-0 h-8">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border border-border z-50">
-              <SelectItem value="all">All</SelectItem>
-              {collections.map((col) => (
-                <SelectItem key={col.node.handle} value={col.node.handle}>{col.node.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Main Content: Sidebar + Grid */}
+      <div className="container py-8">
+        <div className="flex gap-8">
+          {/* Desktop Sidebar */}
+          <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start">
+            <FilterSidebar />
+          </aside>
 
-          {/* Filter toggle (desktop dropdown / mobile sheet) */}
-          {isMobile ? (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="relative shrink-0 h-8 w-8">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px]">
-                <SheetHeader>
-                  <SheetTitle className="text-sm uppercase tracking-[0.1em]">Filters</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <FilterContent />
-                </div>
-              </SheetContent>
-            </Sheet>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs uppercase tracking-[0.1em] gap-1.5 shrink-0"
-              onClick={() => setFiltersOpen(!filtersOpen)}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-1 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center">
-                  {activeFilterCount}
+          {/* Right Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header: mobile filter + count + sort */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                {/* Mobile filter trigger */}
+                {isMobile && (
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs uppercase tracking-[0.1em]">
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        Filter
+                        {activeFilterCount > 0 && (
+                          <span className="ml-1 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center">
+                            {activeFilterCount}
+                          </span>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[280px]">
+                      <SheetHeader>
+                        <SheetTitle className="text-sm uppercase tracking-[0.1em]">Filters</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6">
+                        <FilterSidebar />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {filtered.length} product{filtered.length !== 1 ? "s" : ""}
                 </span>
-              )}
-              <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-            </Button>
-          )}
-
-          <div className="flex-1" />
-
-          {/* Grid toggle */}
-          {!isMobile ? (
-            <div className="flex items-center border border-border rounded-sm overflow-hidden shrink-0">
-              {GRID_OPTIONS.map(opt => (
-                <button
-                  key={opt.cols}
-                  onClick={() => setGridCols(opt.cols)}
-                  title={opt.label}
-                  className={`p-1.5 transition-colors ${
-                    gridCols === opt.cols ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {opt.icon}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center border border-border rounded-sm overflow-hidden shrink-0">
-              <button
-                onClick={() => setGridCols(1)}
-                title="1 column"
-                className={`p-1.5 transition-colors ${gridCols === 1 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setGridCols(2)}
-                title="2 columns"
-                className={`p-1.5 transition-colors ${gridCols === 2 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <Grid2x2 className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop filter dropdown — sort replaces category here */}
-        {!isMobile && (
-          <AnimatePresence>
-            {filtersOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border">
-                  {/* Sort (moved here from main bar) */}
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                    <SelectTrigger className="w-[140px] text-xs uppercase tracking-[0.1em] h-7">
-                      <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border z-50">
-                      {SORT_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Size pills */}
-                  {availableSizes.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground mr-1">Size:</span>
-                      {availableSizes.map(size => (
-                        <button
-                          key={size}
-                          onClick={() => toggleSize(size)}
-                          className={`h-6 min-w-[1.75rem] px-1.5 text-[10px] border rounded-sm transition-colors ${
-                            selectedSizes.includes(size)
-                              ? "border-foreground bg-primary text-primary-foreground"
-                              : "border-border hover:border-foreground"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* In-stock toggle */}
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox
-                      id="desktop-in-stock"
-                      checked={inStockOnly}
-                      onCheckedChange={(checked) => setInStockOnly(checked === true)}
-                      className="h-3.5 w-3.5"
-                    />
-                    <label htmlFor="desktop-in-stock" className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground cursor-pointer">In stock</label>
-                  </div>
-
-                  {/* Price range */}
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
-                      placeholder="Min ₦"
-                      className="w-20 py-1 px-2 bg-card border border-border rounded-sm text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                    <span className="text-muted-foreground text-[10px]">–</span>
-                    <input
-                      type="number"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                      placeholder="Max ₦"
-                      className="w-20 py-1 px-2 bg-card border border-border rounded-sm text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                  </div>
-
-                  {activeFilterCount > 0 && (
-                    <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2 uppercase tracking-[0.1em]" onClick={clearFilters}>
-                      Clear ({activeFilterCount})
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-      </div>
-
-      {/* Product Grid */}
-      <div className="container py-6">
-        {isLoading ? (
-          <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-square w-full rounded-sm" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
               </div>
-            ))}
+
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                <SelectTrigger className="w-[160px] text-xs h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border z-50">
+                  {SORT_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Product Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="space-y-3">
+                    <Skeleton className="aspect-square w-full rounded-sm" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <p className="text-center text-muted-foreground py-20">No products found</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {filtered.map((product, i) => (
+                  <motion.div
+                    key={product.node.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                  >
+                    <ProductCard product={product} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground py-20">No products found</p>
-        ) : (
-          <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
-            {filtered.map((product, i) => (
-              <motion.div
-                key={product.node.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-              >
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
