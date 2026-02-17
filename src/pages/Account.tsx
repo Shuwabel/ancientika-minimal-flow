@@ -38,7 +38,7 @@ export default function Account() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [phoneDial, setPhoneDial] = useState("+1");
+  const [phoneDial, setPhoneDial] = useState("+234");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
@@ -67,7 +67,7 @@ export default function Account() {
             setPhoneDial(match.dial);
             setPhoneNumber(phone.slice(match.dial.length));
           } else {
-            setPhoneDial("+1");
+            setPhoneDial("+234");
             setPhoneNumber(phone);
           }
         }

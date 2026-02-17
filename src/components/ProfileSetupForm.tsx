@@ -28,14 +28,14 @@ export default function ProfileSetupForm({ userId, email, onComplete }: ProfileS
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phoneDial, setPhoneDial] = useState("+1");
+  const [phoneDial, setPhoneDial] = useState("+234");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState("Nigeria");
 
   // Size guide fields
   const [gender, setGender] = useState("");
