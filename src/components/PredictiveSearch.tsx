@@ -108,22 +108,20 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-start justify-center"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
           onClick={onClose}
         >
-          {/* Panel — stop clicks from closing */}
+          {/* Top-pinned search bar — full width */}
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
-            className={`mt-16 bg-background border border-border shadow-2xl overflow-hidden ${
-              isMobile ? "w-full mx-2 rounded-lg" : "w-full max-w-[1000px] rounded-lg"
-            }`}
+            className="w-full bg-background border-b border-border"
           >
             {/* Search input */}
-            <div className="flex items-center border-b border-border px-4 py-3">
+            <div className="flex items-center px-4 py-3 max-w-[1000px] mx-auto">
               <Search className="h-5 w-5 text-muted-foreground mr-3 shrink-0" />
               <input
                 ref={inputRef}
@@ -141,12 +139,21 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                 <X className="h-5 w-5" />
               </button>
             </div>
+          </motion.div>
 
-            {/* Results */}
-            {query.length >= 2 && (
+          {/* Results dropdown — centered container */}
+          {query.length >= 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15, delay: 0.05 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`bg-background shadow-xl ${
+                isMobile ? "w-full" : "max-w-[1000px] mx-auto"
+              }`}
+            >
               <div className={`max-h-[70vh] overflow-y-auto ${isMobile ? "p-4 space-y-5" : "p-6"}`}>
                 {isMobile ? (
-                  // MOBILE: stacked layout
                   <>
                     {suggestions.length > 0 && (
                       <div>
@@ -199,9 +206,7 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                     )}
                   </>
                 ) : (
-                  // DESKTOP: two-column layout
                   <div className="grid grid-cols-[1fr_1.5fr] gap-8">
-                    {/* Left column: suggestions + collections */}
                     <div className="space-y-6">
                       {suggestions.length > 0 && (
                         <div>
@@ -239,7 +244,6 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                       )}
                     </div>
 
-                    {/* Right column: products */}
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Products</p>
                       {products.length > 0 ? (
@@ -255,21 +259,21 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                   </div>
                 )}
               </div>
-            )}
 
-            {/* Show all results footer */}
-            {query.length >= 2 && (products.length > 0 || collections.length > 0) && (
-              <div className="border-t border-border px-4 py-3">
-                <button
-                  onClick={handleShowAll}
-                  className="flex items-center gap-1.5 text-sm text-accent hover:underline transition-colors"
-                >
-                  Show all results for &lsquo;{query}&rsquo;
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </motion.div>
+              {/* Show all results footer */}
+              {(products.length > 0 || collections.length > 0) && (
+                <div className="border-t border-border px-4 py-3 max-w-[1000px] mx-auto">
+                  <button
+                    onClick={handleShowAll}
+                    className="flex items-center gap-1.5 text-sm text-accent hover:underline transition-colors"
+                  >
+                    Show all results for &lsquo;{query}&rsquo;
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
