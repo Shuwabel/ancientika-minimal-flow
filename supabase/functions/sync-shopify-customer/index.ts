@@ -61,6 +61,24 @@ const CUSTOMER_ADDRESS_CREATE = `
   }
 `;
 
+const CUSTOMER_UPDATE = `
+  mutation customerUpdate($customerAccessToken: String!, $customer: CustomerUpdateInput!) {
+    customerUpdate(customerAccessToken: $customerAccessToken, customer: $customer) {
+      customer {
+        id
+        firstName
+        lastName
+        phone
+      }
+      customerUserErrors {
+        code
+        field
+        message
+      }
+    }
+  }
+`;
+
 async function shopifyStorefrontRequest(query: string, variables: Record<string, unknown> = {}) {
   const token = Deno.env.get("SHOPIFY_PRIVATE_STOREFRONT_TOKEN");
   if (!token) throw new Error("Private storefront token not configured");
@@ -76,6 +94,75 @@ async function shopifyStorefrontRequest(query: string, variables: Record<string,
   return data;
 }
 
+async function getCustomerAccessToken(email: string, password: string): Promise<string | null> {
+  const result = await shopifyStorefrontRequest(CUSTOMER_ACCESS_TOKEN_CREATE, {
+    input: { email, password },
+  });
+  return result?.data?.customerAccessTokenCreate?.customerAccessToken?.accessToken || null;
+}
+
+function buildAddressInput(profile: Record<string, unknown>): Record<string, string> | null {
+  if (!profile.address_line1 || !profile.city) return null;
+  const address: Record<string, string> = {
+    address1: profile.address_line1 as string,
+    city: profile.city as string,
+  };
+  if (profile.address_line2) address.address2 = profile.address_line2 as string;
+  if (profile.state) address.province = profile.state as string;
+  if (profile.postal_code) address.zip = profile.postal_code as string;
+  if (profile.country) address.country = profile.country as string;
+  if (profile.first_name) address.firstName = profile.first_name as string;
+  if (profile.last_name) address.lastName = profile.last_name as string;
+  if (profile.phone) address.phone = profile.phone as string;
+  return address;
+}
+
+async function syncAddressAndProfile(
+  email: string,
+  storedToken: string,
+  profile: Record<string, unknown>
+) {
+  const accessToken = await getCustomerAccessToken(email, storedToken);
+  if (!accessToken) {
+    console.error("Could not get customer access token for profile sync");
+    return;
+  }
+
+  // Update customer name/phone
+  const customerUpdate: Record<string, unknown> = {};
+  if (profile.first_name) customerUpdate.firstName = profile.first_name;
+  if (profile.last_name) customerUpdate.lastName = profile.last_name;
+  if (profile.phone) customerUpdate.phone = profile.phone;
+
+  if (Object.keys(customerUpdate).length > 0) {
+    const updateResult = await shopifyStorefrontRequest(CUSTOMER_UPDATE, {
+      customerAccessToken: accessToken,
+      customer: customerUpdate,
+    });
+    const updateErrors = updateResult?.data?.customerUpdate?.customerUserErrors || [];
+    if (updateErrors.length > 0) {
+      console.error(`Customer update errors: ${updateErrors.map((e: { message: string }) => e.message).join(", ")}`);
+    } else {
+      console.log(`Customer profile updated for ${email}`);
+    }
+  }
+
+  // Create address if available
+  const address = buildAddressInput(profile);
+  if (address) {
+    const addrResult = await shopifyStorefrontRequest(CUSTOMER_ADDRESS_CREATE, {
+      customerAccessToken: accessToken,
+      address,
+    });
+    const addrErrors = addrResult?.data?.customerAddressCreate?.customerUserErrors || [];
+    if (addrErrors.length > 0) {
+      console.error(`Address creation errors: ${addrErrors.map((e: { message: string }) => e.message).join(", ")}`);
+    } else {
+      console.log(`Address created for ${email}`);
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -89,7 +176,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userId, email } = await req.json();
+    const { userId, email, syncProfile } = await req.json();
 
     if (!userId || !email) {
       return new Response(JSON.stringify({ error: "userId and email required" }), {
@@ -105,10 +192,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch full profile for sync data
+    // Fetch full profile
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("shopify_customer_id, phone, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")
+      .select("shopify_customer_id, shopify_customer_token, phone, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -120,7 +207,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only skip if we have a real Shopify GID
+    // If syncProfile flag is set and we already have a Shopify customer, do a profile update
+    if (syncProfile && profile?.shopify_customer_id?.startsWith("gid://") && profile?.shopify_customer_token) {
+      try {
+        await syncAddressAndProfile(normalizedEmail, profile.shopify_customer_token, profile);
+        return new Response(JSON.stringify({ synced: true, updated: true }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        console.error("Profile sync error:", err);
+        return new Response(JSON.stringify({ synced: false, reason: "profile_sync_error" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Skip creation if already linked
     if (profile?.shopify_customer_id?.startsWith("gid://")) {
       return new Response(JSON.stringify({ synced: true, existing: true }), {
         status: 200,
@@ -128,7 +232,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build customer create input with all available profile data
+    // Build customer create input
     const randomPassword = crypto.randomUUID().slice(0, 20) + "A1!";
 
     const customerInput: Record<string, unknown> = {
@@ -154,51 +258,22 @@ Deno.serve(async (req) => {
     if (result?.customer?.id) {
       const shopifyCustomerId = result.customer.id;
 
-      // Store the Shopify GID
+      // Store the Shopify GID AND the random password for future access token creation
       await supabaseAdmin
         .from("profiles")
-        .update({ shopify_customer_id: shopifyCustomerId })
+        .update({
+          shopify_customer_id: shopifyCustomerId,
+          shopify_customer_token: randomPassword,
+        })
         .eq("user_id", userId);
 
-      console.log(`Shopify customer created for ${normalizedEmail} with name/phone`);
+      console.log(`Shopify customer created for ${normalizedEmail}, token stored`);
 
-      // Try to create address if we have address data
+      // Try to sync address if data available
       if (profile?.address_line1 && profile?.city) {
         try {
-          // Get customer access token
-          const tokenResult = await shopifyStorefrontRequest(CUSTOMER_ACCESS_TOKEN_CREATE, {
-            input: { email: normalizedEmail, password: randomPassword },
-          });
-
-          const accessToken = tokenResult?.data?.customerAccessTokenCreate?.customerAccessToken?.accessToken;
-
-          if (accessToken) {
-            const address: Record<string, string> = {
-              address1: profile.address_line1,
-              city: profile.city,
-            };
-            if (profile.address_line2) address.address2 = profile.address_line2;
-            if (profile.state) address.province = profile.state;
-            if (profile.postal_code) address.zip = profile.postal_code;
-            if (profile.country) address.country = profile.country;
-            if (profile.first_name) address.firstName = profile.first_name;
-            if (profile.last_name) address.lastName = profile.last_name;
-            if (profile.phone) address.phone = profile.phone;
-
-            const addrResult = await shopifyStorefrontRequest(CUSTOMER_ADDRESS_CREATE, {
-              customerAccessToken: accessToken,
-              address,
-            });
-
-            const addrErrors = addrResult?.data?.customerAddressCreate?.customerUserErrors || [];
-            if (addrErrors.length > 0) {
-              console.error(`Address creation errors: ${addrErrors.map((e: { message: string }) => e.message).join(", ")}`);
-            } else {
-              console.log(`Address created for ${normalizedEmail}`);
-            }
-          }
+          await syncAddressAndProfile(normalizedEmail, randomPassword, profile);
         } catch (addrErr) {
-          // Don't fail the whole sync if address creation fails
           console.error("Address sync error:", addrErr);
         }
       }
