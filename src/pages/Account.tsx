@@ -49,7 +49,10 @@ export default function Account() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+  if (!user) {
+    setLoading(false);
+    return;
+  }
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -158,6 +161,8 @@ export default function Account() {
     await signOut();
     navigate("/", { replace: true });
   };
+
+  if (!authLoading && !user) return null;
 
   if (authLoading || loading) {
     return (
