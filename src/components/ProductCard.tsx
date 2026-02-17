@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Eye } from "lucide-react";
+import { ShoppingBag, Search } from "lucide-react";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { Badge } from "@/components/ui/badge";
 import MobileQuickAdd from "@/components/MobileQuickAdd";
@@ -91,15 +91,15 @@ export default function ProductCard({ product, aspectRatio }: { product: Shopify
                   >
                     <button
                       onClick={handleQuickView}
-                      className="h-7 w-7 flex items-center justify-center transition-transform hover:scale-110"
+                      className="h-8 w-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-110"
                     >
-                      <Eye className="h-4 w-4 text-foreground fill-foreground" />
+                      <Search className="h-4 w-4 text-white" />
                     </button>
                     <button
                       onClick={handleQuickAdd}
-                      className="h-7 w-7 flex items-center justify-center transition-transform hover:scale-110"
+                      className="h-8 w-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-110"
                     >
-                      <ShoppingBag className="h-4 w-4 text-foreground fill-foreground" />
+                      <ShoppingBag className="h-4 w-4 text-white" />
                     </button>
                   </motion.div>
                 )}

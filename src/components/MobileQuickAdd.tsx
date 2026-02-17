@@ -106,9 +106,9 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
       <DialogTrigger asChild>
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-          className="absolute top-2 right-2 z-10 h-7 w-7 flex items-center justify-center active:scale-95 transition-transform"
+          className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black flex items-center justify-center active:scale-95 transition-transform"
         >
-          <ShoppingBag className="h-4 w-4 text-foreground fill-foreground" />
+          <ShoppingBag className="h-4 w-4 text-white" />
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-[90vw] rounded-lg p-5">
