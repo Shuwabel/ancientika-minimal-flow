@@ -1,56 +1,77 @@
 
-# UI Fixes: Featured Carousel, Collections, "You May Also Like", and Mobile Quick-Add
 
-## 1. Featured Carousel -- Smaller Cards + Remove Mobile Scroll Arrows
+# Product Interaction and Scroll Behavior Refinement
 
-**File: `src/pages/Index.tsx`**
+## 1. Remove Scroll Snapping Globally
 
-- Change card widths to show ~2.5 items on mobile: `w-[38vw]` mobile, `sm:w-[30vw]`, `md:w-[23vw]`, `lg:w-[22vw]`
-- Hide the left/right ChevronLeft/ChevronRight arrow buttons on mobile using `hidden md:flex` -- on mobile users just swipe naturally, no buttons needed
-- Reduce gap to `gap-2 md:gap-3`
+Remove all snap classes from horizontal scroll containers.
 
-## 2. Collections Grid -- Responsive Columns
+**Files affected:**
+- `src/pages/Index.tsx` -- Remove `snap-x snap-mandatory` from Featured carousel container and `snap-start` from card wrappers
+- `src/pages/ProductDetail.tsx` -- Remove `snap-x snap-mandatory` from "You May Also Like" container and `snap-start` from card wrappers
+- Keep `no-scrollbar` CSS utility (it hides scrollbars, not snap behavior)
 
-**File: `src/pages/Index.tsx`**
+## 2. Redesign Desktop Hover Interaction (ProductCard)
 
-Change from fixed `grid-cols-3` to responsive columns that use available space:
-- Mobile: `grid-cols-3` (compact)
-- md: `grid-cols-4`
-- lg: `grid-cols-5`
-- xl: `grid-cols-6`
+**File: `src/components/ProductCard.tsx`**
 
-This ensures larger screens fill the space instead of showing only 3 wide columns.
+Replace the current full-overlay with buttons approach. New hover behavior:
 
-## 3. "You May Also Like" Section -- Horizontal Carousel
+- Show only two small icon buttons on hover (no overlay blocking the image)
+- **Eye icon** (Quick View) -- top-right corner
+- **Cart icon** (Quick Add) -- directly below the eye icon, vertically aligned
+- Icons: solid black fill, no white circular background
+- Smooth 200ms fade-in via framer-motion (already in place)
+- The overlay will be minimal/transparent so the product image link remains clickable
+- Each icon uses `preventDefault()` + `stopPropagation()` to avoid navigation
 
-**File: `src/pages/ProductDetail.tsx`**
+**Click behaviors:**
+- Clicking the product image navigates to the product page (default Link behavior, not blocked)
+- Clicking Eye icon opens QuickViewModal (full product preview)
+- Clicking Cart icon opens a new QuickAddDialog (small dialog with size/variant selection + Add to Cart + Buy Now)
 
-Replace the current `grid grid-cols-2 md:grid-cols-4` layout with a horizontal scrollable carousel matching the Featured section style:
-- Use a scrollable `flex` container with `overflow-x-auto snap-x snap-mandatory no-scrollbar`
-- Card widths: `w-[38vw]` mobile (shows ~2.5), responsive scaling for larger screens
-- No scroll arrows on mobile, optional hover arrows on desktop
-- Keep the same `scroll-smooth` and `snap-start` behavior
+## 3. Create Desktop Quick Add Dialog
 
-## 4. Fix Mobile Quick-Add "+" Button Navigation Issue
+**New file: `src/components/DesktopQuickAdd.tsx`**
+
+A small Dialog (smaller than QuickViewModal) triggered by the cart icon on desktop hover. Contains:
+- Size selection buttons
+- Variant selection (if applicable)
+- Add to Cart button
+- Buy Now button
+- Close button (X) built into DialogContent
+- Closes on outside click
+
+Reuses the same pattern as `MobileQuickAdd.tsx` but as a controlled Dialog (open/onOpenChange props instead of internal trigger).
+
+## 4. Redesign Mobile Interaction
 
 **File: `src/components/MobileQuickAdd.tsx`**
 
-The problem: clicking the "+" button opens the dialog but ALSO triggers the parent `<Link>` navigation (loading the product page). The current `e.stopPropagation()` alone isn't enough because the `<Link>` is an ancestor, not a sibling.
+Replace the Plus icon with a Cart (ShoppingBag) icon:
+- Position: top-right of product image
+- Styling: solid black fill, no white background, minimal design
+- Same click behavior: opens the quick-add Dialog with size/variant/add-to-cart/buy-now
+- `preventDefault()` + `stopPropagation()` preserved
 
-Fix: Add `e.preventDefault()` back alongside `e.stopPropagation()` on the trigger button. The key insight from the knowledge base is that both are needed -- `stopPropagation` prevents bubbling and `preventDefault` prevents the `<Link>` default navigation. The previous removal of `preventDefault` is what caused this regression.
+## 5. Update ProductCard to Wire Everything Together
 
-```tsx
-onClick={(e) => { 
-  e.preventDefault(); 
-  e.stopPropagation(); 
-  setOpen(true); 
-}}
-```
+**File: `src/components/ProductCard.tsx`**
+
+- Remove the full dark overlay (`bg-black/40`) and large centered buttons
+- On desktop hover: render two small icon buttons (Eye + Cart) positioned absolutely in top-right, vertically stacked
+- Eye icon click opens QuickViewModal (existing)
+- Cart icon click opens new DesktopQuickAdd dialog
+- On mobile: render the updated MobileQuickAdd (cart icon, not plus)
+- The `<Link>` wrapping the image remains fully clickable for navigation
 
 ## Technical Summary
 
 | File | Changes |
 |------|---------|
-| `src/pages/Index.tsx` | Smaller featured cards (`w-[38vw]`), hide scroll arrows on mobile, responsive collection grid columns |
-| `src/pages/ProductDetail.tsx` | Convert "You May Also Like" from grid to horizontal swipeable carousel |
-| `src/components/MobileQuickAdd.tsx` | Add `e.preventDefault()` back to fix navigation issue on "+" click |
+| `src/pages/Index.tsx` | Remove `snap-x snap-mandatory` and `snap-start` classes |
+| `src/pages/ProductDetail.tsx` | Remove `snap-x snap-mandatory` and `snap-start` classes |
+| `src/components/ProductCard.tsx` | Replace full overlay with two small hover icons (Eye + Cart); wire up DesktopQuickAdd |
+| `src/components/MobileQuickAdd.tsx` | Change Plus icon to ShoppingBag icon, solid black styling |
+| `src/components/DesktopQuickAdd.tsx` | New small Dialog for desktop quick-add with size/variant/cart/buy-now |
+
