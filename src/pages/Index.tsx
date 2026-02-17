@@ -18,7 +18,7 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section className="py-12 md:py-16 bg-white">
+    <section className="py-12 md:py-16">
       <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
         <h2
           className="uppercase font-medium tracking-[0.15em]"
@@ -215,7 +215,7 @@ export default function Index() {
       <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
 
       {/* Collections Grid - center aligned */}
-      <section className="relative py-20 overflow-hidden bg-white">
+      <section className="relative py-20 overflow-hidden bg-card">
         <div className="container relative">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
           {isCollectionsLoading ? (
