@@ -102,6 +102,7 @@ export type Database = {
           id: string
           phone: string | null
           postal_code: string | null
+          shopify_customer_id: string | null
           state: string | null
           updated_at: string | null
           user_id: string
@@ -123,6 +124,7 @@ export type Database = {
           id?: string
           phone?: string | null
           postal_code?: string | null
+          shopify_customer_id?: string | null
           state?: string | null
           updated_at?: string | null
           user_id: string
@@ -144,6 +146,7 @@ export type Database = {
           id?: string
           phone?: string | null
           postal_code?: string | null
+          shopify_customer_id?: string | null
           state?: string | null
           updated_at?: string | null
           user_id?: string
