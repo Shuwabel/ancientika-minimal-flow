@@ -305,8 +305,12 @@ export default function ProductDetail() {
       {related.length > 0 && (
         <section className="mt-20 pt-10 border-t border-border">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">You May Also Like</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {related.map((p) => <ProductCard key={p.node.id} product={p} />)}
+          <div className="flex gap-2 md:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar">
+            {related.map((p) => (
+              <div key={p.node.id} className="snap-start shrink-0 w-[38vw] sm:w-[30vw] md:w-[23vw] lg:w-[22vw]">
+                <ProductCard product={p} />
+              </div>
+            ))}
           </div>
         </section>
       )}

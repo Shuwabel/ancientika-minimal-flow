@@ -46,14 +46,14 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
         <div className="relative group">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute left-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="absolute right-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Scroll right"
           >
             <ChevronRight className="h-5 w-5" />
@@ -61,10 +61,10 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
 
           <div
             ref={scrollRef}
-            className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-8 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
+            className="flex gap-2 md:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-4 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
           >
             {products.map((product) => (
-              <div key={product.node.id} className="snap-start shrink-0 w-[40vw] sm:w-[35vw] md:w-[23vw] lg:w-[22vw]">
+              <div key={product.node.id} className="snap-start shrink-0 w-[38vw] sm:w-[30vw] md:w-[23vw] lg:w-[22vw]">
                 <ProductCard product={product} />
               </div>
             ))}
@@ -239,7 +239,7 @@ export default function Index() {
               ))}
             </div>
           ) : shopifyCollections.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2 md:gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
               {shopifyCollections.map((col, i) => (
                 <motion.div key={col.node.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
