@@ -105,7 +105,7 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => { e.stopPropagation(); setOpen(true); }}
           className="absolute bottom-2 right-2 z-10 h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center border border-border/50 shadow-sm active:scale-95 transition-transform"
         >
           <Plus className="h-4 w-4 text-foreground" />

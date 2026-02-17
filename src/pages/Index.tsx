@@ -61,10 +61,10 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
 
           <div
             ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-8 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
+            className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-8 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
           >
             {products.map((product) => (
-              <div key={product.node.id} className="snap-start shrink-0 w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw]">
+              <div key={product.node.id} className="snap-start shrink-0 w-[40vw] sm:w-[35vw] md:w-[23vw] lg:w-[22vw]">
                 <ProductCard product={product} />
               </div>
             ))}
@@ -216,11 +216,12 @@ export default function Index() {
           <p className="text-base md:text-lg mb-8 tracking-wide">
             Your presence, refined.
           </p>
-          <Button asChild size="lg" className="uppercase tracking-[0.15em]">
-            <Link to="/shop">
-              Explore Collection <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-white/15 backdrop-blur-xl border border-white/30 text-white uppercase tracking-[0.15em] text-sm font-medium shadow-lg shadow-white/10 hover:bg-white/25 hover:shadow-xl hover:shadow-white/15 transition-all duration-300"
+          >
+            Explore Collection <ArrowRight className="h-4 w-4" />
+          </Link>
         </motion.div>
       </section>
 
@@ -238,20 +239,18 @@ export default function Index() {
               ))}
             </div>
           ) : shopifyCollections.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
               {shopifyCollections.map((col, i) => (
                 <motion.div key={col.node.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                  <Link to={`/shop?category=${col.node.handle}`} className="block aspect-[3/4] rounded-sm relative group overflow-hidden border border-border/50">
-                    {col.node.image ? (
-                      <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className="absolute inset-0 bg-card/80" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <p className="text-sm font-medium text-white">{col.node.title}</p>
-                      {col.node.description && <p className="text-xs text-white/70 line-clamp-1">{col.node.description}</p>}
+                  <Link to={`/shop?category=${col.node.handle}`} className="block group">
+                    <div className="aspect-square rounded-sm overflow-hidden border border-border/50 bg-muted">
+                      {col.node.image ? (
+                        <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full bg-card/80" />
+                      )}
                     </div>
+                    <p className="text-xs md:text-sm font-medium mt-1.5 text-center truncate">{col.node.title}</p>
                   </Link>
                 </motion.div>
               ))}
