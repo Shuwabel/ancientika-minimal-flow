@@ -1,47 +1,84 @@
 
 
-# Fix Duplicate Prevention and Sync Existing Customers
+# Sync Customer Details to Shopify
 
-## What's happening now
+## Problem
 
-- The Admin API token does NOT have `read_customers` scope, so the `shopifyAdminLookupCustomer` function always fails with 401
-- One user (shuwabel@gmail.com) is stuck with `"shopify_exists_unlinked"` and won't be retried
-- New users signing up will work fine (Storefront API `customerCreate` works)
+When creating a Shopify customer, only `email` and `password` are sent. Phone, name, and address from the user's profile are not included.
+
+## What the Storefront API supports
+
+The `CustomerCreateInput` accepts these fields:
+- `email` (already sent)
+- `password` (already sent)
+- `firstName`
+- `lastName`
+- `phone`
+- `acceptsMarketing`
+
+Addresses cannot be set during `customerCreate` -- they require a separate mutation (`customerAddressCreate`) with a customer access token after creation.
+
+## What's available in profiles table now
+
+- `phone` -- available, can be sent
+- `firstName` / `lastName` -- **not in profiles table yet** (need to add columns)
+- Address fields (`address_line1`, `city`, `state`, `postal_code`, `country`) -- available, but require post-creation flow
 
 ## Changes
 
-### 1. Fix the "already synced" check
+### 1. Add `first_name` and `last_name` columns to profiles table
 
-Update `sync-shopify-customer` so users with `"shopify_exists_unlinked"` are retried instead of being skipped. Only skip users who have a real Shopify GID (starts with `gid://`).
+New migration to add these columns so users can store their name.
 
+### 2. Update Account page to include name fields
+
+Add First Name and Last Name inputs to the Contact section of the Account page.
+
+### 3. Update `sync-shopify-customer` edge function
+
+- Fetch the full profile (not just `shopify_customer_id`) to get phone, first_name, last_name
+- Pass `firstName`, `lastName`, `phone` to the `customerCreate` mutation input
+- After successful creation, use `customerAccessTokenCreate` to get an access token, then call `customerAddressCreate` to save the address if available
+
+### 4. Update `useAuth.ts` to pass profile data
+
+Instead of only sending `userId` and `email`, also send the profile data to the sync function so it has everything it needs.
+
+## Technical Details
+
+### Migration SQL
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS first_name text,
+  ADD COLUMN IF NOT EXISTS last_name text;
 ```
-Line 124: Change from
-  if (profile?.shopify_customer_id)
-to
-  if (profile?.shopify_customer_id?.startsWith("gid://"))
-```
 
-### 2. Remove Admin API lookup (not usable)
+### Edge function changes (`sync-shopify-customer/index.ts`)
 
-Since the Admin token lacks `read_customers`, remove the `shopifyAdminLookupCustomer` function and related constants (`SHOPIFY_ADMIN_URL`, `CUSTOMER_LOOKUP_QUERY`). In the TAKEN error handler, just store `"shopify_exists_unlinked"` directly -- this is the only possible outcome without Admin API access.
+- Fetch full profile: `select("shopify_customer_id, phone, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")`
+- Include in `customerCreate` input:
+  ```
+  firstName: profile.first_name || undefined
+  lastName: profile.last_name || undefined
+  phone: profile.phone || undefined
+  ```
+- Add `customerAccessTokenCreate` mutation to get access token after creation
+- Add `customerAddressCreate` mutation to save address using the access token
+- Add new GraphQL mutations for address creation
 
-### 3. Reset the stuck user and re-trigger sync
+### Account page changes (`src/pages/Account.tsx`)
 
-- Set `shopify_customer_id` to `NULL` for shuwabel@gmail.com so the sync retries
-- Call the `sync-shopify-customer` function to attempt creating the customer again
-- If shuwabel@gmail.com already exists in Shopify (TAKEN error), they'll be marked as `"shopify_exists_unlinked"` again -- this is expected and harmless since their Shopify account already exists
+- Add `first_name` and `last_name` to the Profile interface
+- Add two input fields in the Contact section
+- Include them in the save handler
 
-### 4. No batch sync function needed (yet)
+### Flow after changes
 
-There's only 1 user right now. The existing per-login sync handles all future users automatically. A batch function can be added later when there are more users to process.
-
-## Technical Summary
-
-**Files modified:**
-- `supabase/functions/sync-shopify-customer/index.ts` -- remove Admin API code, fix skip logic
-
-**Data change:**
-- Reset `shopify_customer_id` to NULL for user `645eae45-85ca-4ec7-9ff9-3443b55a2574`
-
-**Result:** Going forward, every new sign-up creates a Shopify customer via the Private Storefront Token. The one existing user will be re-synced on next login.
+1. User signs up and fills in profile (name, phone, address)
+2. On login, `ensureShopifySync` fires
+3. Edge function fetches full profile
+4. Creates Shopify customer with name + phone
+5. Gets customer access token
+6. Creates customer address in Shopify
+7. Stores Shopify GID in profiles
 
