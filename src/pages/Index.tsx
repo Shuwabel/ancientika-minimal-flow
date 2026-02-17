@@ -44,7 +44,7 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
       ) : products.length > 0 ? (
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
+          className="flex justify-center gap-3 overflow-x-auto scroll-smooth pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
         >
           {products.map((product) => (
             <div
@@ -235,9 +235,9 @@ export default function Index() {
                   transition={{ delay: i * 0.06 }}
                 >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
-                    <div className="aspect-square rounded-md overflow-hidden bg-muted/60 flex items-center justify-center transition-shadow duration-300 group-hover:shadow-md">
+                    <div className="aspect-square rounded-md overflow-hidden bg-muted/60 transition-shadow duration-300 group-hover:shadow-md">
                       {col.node.image ? (
-                        <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-3/4 h-3/4 object-contain transition-transform duration-500 group-hover:scale-105" />
+                        <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
                         <div className="w-full h-full bg-muted/40" />
                       )}
