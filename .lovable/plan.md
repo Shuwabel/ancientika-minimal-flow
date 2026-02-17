@@ -1,49 +1,37 @@
 
 
-# Collection Page Layout and Mobile Fix
+# Search Overlay — Top-Pinned with Backdrop Blur
 
-## 1. Full-Width Collection Hero
+## What Changes
 
-**File: `src/pages/Shop.tsx`**
+The search panel needs to match the reference: a full-width search bar pinned to the very top of the viewport, with the page content visible and blurred underneath.
 
-The hero banner is currently inside `<div className="container py-10">`, constraining it to max-width. Changes:
+## Visual Differences from Current
 
-- Move the hero section outside of (above) the container wrapper
-- Remove `container` wrapper from the hero; apply full-width styling
-- Use `width: 100%` with no max-width restriction
-- Set responsive height via `h-[clamp(300px,45vh,600px)]` instead of `aspect-[21/9]`
-- Remove `rounded-sm` (full-bleed should have no border-radius)
-- Keep `object-fit: cover` on the image
-- Remove top padding so hero starts flush under the header
-- The rest of the page content (toolbar + product grid) stays inside a container
+| Aspect | Current | Target (Reference) |
+|--------|---------|---------------------|
+| Panel position | Centered with `mt-16` gap | Pinned to top, no gap |
+| Backdrop | Dark semi-transparent (`bg-foreground/60`) | Lighter blur, page content visible |
+| Panel shape | Rounded card with border | Full-width bar, no rounded corners on top |
+| Search input | Inside a bordered card panel | Full-width input bar at viewport top edge |
+| Results panel | Attached below input inside same card | Drops down from the input bar |
 
-## 2. Sticky Filter Bar Below Header
+## Implementation
 
-**File: `src/pages/Shop.tsx`**
+### File: `src/components/PredictiveSearch.tsx`
 
-The toolbar currently uses `sticky top-0 z-30`. The header is `h-16` (64px) with `sticky top-0 z-40`.
+1. **Backdrop**: Change from `bg-foreground/60 backdrop-blur-sm` to `bg-black/40 backdrop-blur-md` for a softer, more transparent overlay that lets page content show through with blur.
 
-- Change the toolbar's `top-0` to `top-16` (64px) so it sticks directly below the header
-- Keep `z-30` (below header's `z-40`, above product grid)
-- Add `bg-background` (solid, not transparent) to prevent content showing through
-- Keep `backdrop-blur-sm` and `border-b`
+2. **Panel positioning**: Remove `mt-16` and `rounded-lg`. Pin the search panel to the top of the viewport with no gap. Use `w-full` with no max-width on the outer search bar wrapper.
 
-## 3. Mobile Quick Add Navigation Bug Fix
+3. **Structure split**: Separate the search input bar (full-width, top-pinned) from the results dropdown (centered, max-width container below).
+   - Search input bar: full viewport width, solid background, sits at `top: 0`
+   - Results dropdown: centered container (max-width 1000px) drops below the input bar
 
-**File: `src/components/MobileQuickAdd.tsx`**
+4. **Input bar styling**: Clean horizontal bar with the search icon, input field, and close button. Solid `bg-background` background. Subtle bottom border.
 
-The issue: when the Dialog closes, the underlying `<Link>` still receives the click, navigating away. The `onOpenChange` handler on the Dialog doesn't prevent propagation.
+5. **Results panel**: Remains as the existing two-column desktop / stacked mobile layout, but drops down from the full-width input bar with a contained max-width and slight shadow.
 
-- Wrap the Dialog's `onOpenChange` to call `stopPropagation` when closing
-- Add `onClick` with `stopPropagation` on the `DialogContent` itself to prevent any click inside the dialog from bubbling to the parent `<Link>`
-- Ensure the dialog overlay click (close-on-outside) doesn't bubble to the product card link
+6. **Animation**: Slide down from top (`y: -10` to `y: 0`) instead of the current fade approach.
 
----
-
-### Technical Details
-
-| File | Change |
-|------|--------|
-| `src/pages/Shop.tsx` | Restructure: hero outside container, full-width; toolbar `top-16` |
-| `src/components/MobileQuickAdd.tsx` | Add `stopPropagation` on DialogContent and overlay to prevent navigation on close |
-
+### No other files are modified. Only `src/components/PredictiveSearch.tsx` changes.
