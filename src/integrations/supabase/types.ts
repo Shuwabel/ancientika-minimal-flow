@@ -95,11 +95,13 @@ export type Database = {
           country: string | null
           created_at: string | null
           email: string | null
+          first_name: string | null
           fit_preference: string | null
           gender: string | null
           height: number | null
           height_unit: string | null
           id: string
+          last_name: string | null
           phone: string | null
           postal_code: string | null
           shopify_customer_id: string | null
@@ -117,11 +119,13 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email?: string | null
+          first_name?: string | null
           fit_preference?: string | null
           gender?: string | null
           height?: number | null
           height_unit?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           postal_code?: string | null
           shopify_customer_id?: string | null
@@ -139,11 +143,13 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email?: string | null
+          first_name?: string | null
           fit_preference?: string | null
           gender?: string | null
           height?: number | null
           height_unit?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           postal_code?: string | null
           shopify_customer_id?: string | null

@@ -17,11 +17,45 @@ const CUSTOMER_CREATE_MUTATION = `
       customer {
         id
         email
+        firstName
+        lastName
+        phone
       }
       customerUserErrors {
         field
         message
         code
+      }
+    }
+  }
+`;
+
+const CUSTOMER_ACCESS_TOKEN_CREATE = `
+  mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
+    customerAccessTokenCreate(input: $input) {
+      customerAccessToken {
+        accessToken
+        expiresAt
+      }
+      customerUserErrors {
+        code
+        field
+        message
+      }
+    }
+  }
+`;
+
+const CUSTOMER_ADDRESS_CREATE = `
+  mutation customerAddressCreate($customerAccessToken: String!, $address: MailingAddressInput!) {
+    customerAddressCreate(customerAccessToken: $customerAccessToken, address: $address) {
+      customerAddress {
+        id
+      }
+      customerUserErrors {
+        code
+        field
+        message
       }
     }
   }
@@ -71,10 +105,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check if profile already has a valid Shopify GID
+    // Fetch full profile for sync data
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("shopify_customer_id")
+      .select("shopify_customer_id, phone, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -86,7 +120,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only skip if we have a real Shopify GID (retry "shopify_exists_unlinked" users)
+    // Only skip if we have a real Shopify GID
     if (profile?.shopify_customer_id?.startsWith("gid://")) {
       return new Response(JSON.stringify({ synced: true, existing: true }), {
         status: 200,
@@ -94,15 +128,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Try to create the customer in Shopify
+    // Build customer create input with all available profile data
     const randomPassword = crypto.randomUUID().slice(0, 20) + "A1!";
 
+    const customerInput: Record<string, unknown> = {
+      email: normalizedEmail,
+      password: randomPassword,
+      acceptsMarketing: false,
+    };
+
+    if (profile?.first_name) customerInput.firstName = profile.first_name;
+    if (profile?.last_name) customerInput.lastName = profile.last_name;
+    if (profile?.phone) customerInput.phone = profile.phone;
+
     const data = await shopifyStorefrontRequest(CUSTOMER_CREATE_MUTATION, {
-      input: {
-        email: normalizedEmail,
-        password: randomPassword,
-        acceptsMarketing: false,
-      },
+      input: customerInput,
     });
 
     const result = data?.data?.customerCreate;
@@ -112,15 +152,57 @@ Deno.serve(async (req) => {
     );
 
     if (result?.customer?.id) {
-      // Customer created successfully — store the Shopify GID
       const shopifyCustomerId = result.customer.id;
 
+      // Store the Shopify GID
       await supabaseAdmin
         .from("profiles")
         .update({ shopify_customer_id: shopifyCustomerId })
         .eq("user_id", userId);
 
-      console.log(`Shopify customer created for ${normalizedEmail}`);
+      console.log(`Shopify customer created for ${normalizedEmail} with name/phone`);
+
+      // Try to create address if we have address data
+      if (profile?.address_line1 && profile?.city) {
+        try {
+          // Get customer access token
+          const tokenResult = await shopifyStorefrontRequest(CUSTOMER_ACCESS_TOKEN_CREATE, {
+            input: { email: normalizedEmail, password: randomPassword },
+          });
+
+          const accessToken = tokenResult?.data?.customerAccessTokenCreate?.customerAccessToken?.accessToken;
+
+          if (accessToken) {
+            const address: Record<string, string> = {
+              address1: profile.address_line1,
+              city: profile.city,
+            };
+            if (profile.address_line2) address.address2 = profile.address_line2;
+            if (profile.state) address.province = profile.state;
+            if (profile.postal_code) address.zip = profile.postal_code;
+            if (profile.country) address.country = profile.country;
+            if (profile.first_name) address.firstName = profile.first_name;
+            if (profile.last_name) address.lastName = profile.last_name;
+            if (profile.phone) address.phone = profile.phone;
+
+            const addrResult = await shopifyStorefrontRequest(CUSTOMER_ADDRESS_CREATE, {
+              customerAccessToken: accessToken,
+              address,
+            });
+
+            const addrErrors = addrResult?.data?.customerAddressCreate?.customerUserErrors || [];
+            if (addrErrors.length > 0) {
+              console.error(`Address creation errors: ${addrErrors.map((e: { message: string }) => e.message).join(", ")}`);
+            } else {
+              console.log(`Address created for ${normalizedEmail}`);
+            }
+          }
+        } catch (addrErr) {
+          // Don't fail the whole sync if address creation fails
+          console.error("Address sync error:", addrErr);
+        }
+      }
+
       return new Response(JSON.stringify({ synced: true, created: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -128,8 +210,6 @@ Deno.serve(async (req) => {
     }
 
     if (takenError) {
-      // Customer already exists in Shopify — mark as unlinked
-      // (Admin API lacks read_customers scope, so we can't look up the GID)
       await supabaseAdmin
         .from("profiles")
         .update({ shopify_customer_id: "shopify_exists_unlinked" })
@@ -142,7 +222,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Other error
     const errorMsg = userErrors.map((e: { message: string }) => e.message).join(", ");
     console.error(`Shopify customerCreate errors for ${normalizedEmail}: ${errorMsg}`);
     return new Response(JSON.stringify({ synced: false, reason: errorMsg }), {
