@@ -88,8 +88,14 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
     }
   };
 
+  // Build suggestions from real Shopify data (product + collection titles)
   const suggestions = query.length >= 2
-    ? [query, `${query} collection`, `${query} sale`].slice(0, 3)
+    ? [
+        ...products.map(p => p.node.title),
+        ...collections.map(c => c.node.title),
+      ]
+        .filter((t, i, arr) => arr.indexOf(t) === i) // dedupe
+        .slice(0, 3)
     : [];
 
   if (!open) return null;
@@ -102,21 +108,17 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-start justify-center"
+          className="fixed inset-0 z-50 bg-foreground/60 backdrop-blur-sm flex items-start justify-center"
+          onClick={onClose}
         >
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-
-          {/* Panel */}
+          {/* Panel — stop clicks from closing */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className={`relative z-10 mt-16 bg-background border border-border shadow-2xl overflow-hidden ${
+            onClick={(e) => e.stopPropagation()}
+            className={`mt-16 bg-background border border-border shadow-2xl overflow-hidden ${
               isMobile ? "w-full mx-2 rounded-lg" : "w-full max-w-[1000px] rounded-lg"
             }`}
           >
@@ -153,7 +155,7 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                           {suggestions.map((s) => (
                             <button
                               key={s}
-                              onClick={() => handleNavigate(`/shop?q=${encodeURIComponent(s)}`)}
+                              onClick={() => setQuery(s)}
                               className="flex items-center gap-2 w-full text-left text-sm py-1.5 hover:text-accent transition-colors"
                             >
                               <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -208,7 +210,7 @@ export default function PredictiveSearch({ open, onClose }: PredictiveSearchProp
                             {suggestions.map((s) => (
                               <button
                                 key={s}
-                                onClick={() => handleNavigate(`/shop?q=${encodeURIComponent(s)}`)}
+                                onClick={() => setQuery(s)}
                                 className="flex items-center gap-2 w-full text-left text-sm py-1.5 hover:text-accent transition-colors"
                               >
                                 <Search className="h-3.5 w-3.5 text-muted-foreground" />
