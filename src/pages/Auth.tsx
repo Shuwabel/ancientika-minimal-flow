@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Phone, Loader2, ArrowRight, CheckCircle } from "lucide-react";
+import { Mail, Phone, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -13,12 +13,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
 
+const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [method, setMethod] = useState<"email" | "phone">("email");
-  const [step, setStep] = useState<"form" | "otp" | "magic-link-sent">("form");
+  const [step, setStep] = useState<"form" | "otp">("form");
   const [identifier, setIdentifier] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryDial, setCountryDial] = useState("+1");
@@ -30,6 +32,36 @@ export default function Auth() {
     if (!authLoading && user) navigate("/account", { replace: true });
   }, [user, authLoading, navigate]);
 
+  // --- Email OTP via custom Resend edge function ---
+  const handleEmailOtpRequest = async (emailAddr: string) => {
+    const res = await fetch(
+      `https://${PROJECT_ID}.supabase.co/functions/v1/request-otp`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddr }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to send code");
+    return data;
+  };
+
+  const handleEmailOtpVerify = async (emailAddr: string, code: string) => {
+    const res = await fetch(
+      `https://${PROJECT_ID}.supabase.co/functions/v1/verify-otp`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddr, otp: code }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Verification failed");
+    return data;
+  };
+
+  // --- Send code handler ---
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -37,13 +69,9 @@ export default function Auth() {
       if (method === "email") {
         const email = identifier.trim();
         if (!email) return;
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        setStep("magic-link-sent");
-        toast.success("Magic link sent! Check your email.");
+        await handleEmailOtpRequest(email);
+        setStep("otp");
+        toast.success("Code sent! Check your email.");
       } else {
         const fullPhone = `${countryDial}${phoneNumber.trim()}`;
         if (!phoneNumber.trim()) return;
@@ -60,17 +88,31 @@ export default function Auth() {
     }
   };
 
+  // --- Verify OTP handler ---
   const handleVerify = async () => {
     if (otpCode.length !== 6) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone: identifier.trim(),
-        token: otpCode,
-        type: "sms" as const,
-      });
-      if (error) throw error;
-      toast.success("Signed in successfully!");
+      if (method === "email") {
+        // Custom verify via edge function
+        const data = await handleEmailOtpVerify(identifier.trim(), otpCode);
+        // Use the returned token_hash to complete Supabase auth session
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: data.token_hash,
+          type: data.type || "magiclink",
+        });
+        if (error) throw error;
+        toast.success("Signed in successfully!");
+      } else {
+        // Phone OTP via Supabase
+        const { error } = await supabase.auth.verifyOtp({
+          phone: identifier.trim(),
+          token: otpCode,
+          type: "sms" as const,
+        });
+        if (error) throw error;
+        toast.success("Signed in successfully!");
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid code");
     } finally {
@@ -78,12 +120,18 @@ export default function Auth() {
     }
   };
 
+  // --- Resend handler ---
   const handleResend = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ phone: identifier.trim() });
-      if (error) throw error;
-      toast.success("Code resent!");
+      if (method === "email") {
+        await handleEmailOtpRequest(identifier.trim());
+        toast.success("Code resent!");
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({ phone: identifier.trim() });
+        if (error) throw error;
+        toast.success("Code resent!");
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to resend");
     } finally {
@@ -119,8 +167,6 @@ export default function Auth() {
         <p className="text-sm text-muted-foreground text-center mb-8">
           {step === "form"
             ? "Sign in or create an account"
-            : step === "magic-link-sent"
-            ? `We sent a magic link to ${identifier}`
             : `Enter the 6-digit code sent to ${identifier}`}
         </p>
 
@@ -194,58 +240,14 @@ export default function Auth() {
               <Button type="submit" className="w-full uppercase tracking-[0.1em] gap-2" disabled={loading}>
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : method === "email" ? (
-                  <><ArrowRight className="h-4 w-4" /> Send Magic Link</>
                 ) : (
                   <><ArrowRight className="h-4 w-4" /> Send Code</>
                 )}
               </Button>
             </form>
           </div>
-        ) : step === "magic-link-sent" ? (
-          /* Magic link confirmation */
-          <div className="space-y-6 text-center">
-            <div className="flex justify-center">
-              <CheckCircle className="h-12 w-12 text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Click the link in your email to sign in. You can close this page.
-            </p>
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <button
-                type="button"
-                onClick={async () => {
-                  setLoading(true);
-                  try {
-                    const { error } = await supabase.auth.signInWithOtp({
-                      email: identifier.trim(),
-                      options: { emailRedirectTo: window.location.origin },
-                    });
-                    if (error) throw error;
-                    toast.success("Magic link resent!");
-                  } catch (err: unknown) {
-                    toast.error(err instanceof Error ? err.message : "Failed to resend");
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Resend link
-              </button>
-              <span className="text-muted-foreground">|</span>
-              <button
-                type="button"
-                onClick={() => { setStep("form"); }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Go back
-              </button>
-            </div>
-          </div>
         ) : (
-          /* OTP verification step (phone only) */
+          /* OTP verification step (email + phone) */
           <div className="space-y-6">
             <div className="flex justify-center">
               <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
