@@ -1,43 +1,62 @@
 
+# Plan: Remove All Authentication and User Management
 
-# Plan: Fix Account Page for Unauthenticated Users
+## Summary
 
-## Problem
+Strip out every authentication, user profile, and account management feature from the frontend. The **only user-facing feature that remains** is the AI "Find My Size" recommender, which already persists its data in the browser's local storage (no account needed).
 
-When a user is not logged in and clicks the profile button, the Account page shows a blank/loading state instead of immediately redirecting to `/auth`. This happens because:
+## What Gets Removed
 
-1. The redirect effect (`navigate("/auth")`) and the profile-loading effect run independently
-2. When there's no user, the profile fetch exits early without setting `loading` to `false`, so the page shows an infinite spinner
-3. There's a brief race between the redirect and the render
+### Pages
+- **`src/pages/Auth.tsx`** -- the entire sign-up / sign-in page (delete file)
+- **`src/pages/Account.tsx`** -- the entire profile/account page (delete file)
 
-## Solution
+### Components
+- **`src/components/layout/UserMenu.tsx`** -- the user/profile icon in the header (delete file)
+- **`src/components/ProfileSetupForm.tsx`** -- the multi-step onboarding form (delete file)
+- **`src/components/CountryCodeSelect.tsx`** -- only used by auth/profile forms (delete file)
 
-Two small changes in `src/pages/Account.tsx`:
+### Hooks
+- **`src/hooks/useAuth.ts`** -- the authentication hook (delete file)
 
-### 1. Add early return before the loading spinner
+### Data
+- **`src/lib/country-codes.ts`** -- only used by the auth/profile forms (delete file)
 
-Before the loading/spinner check, add a guard that returns nothing if the user isn't authenticated (the redirect effect handles navigation):
+### Header Update
+- **`src/components/layout/Header.tsx`** -- remove the `UserMenu` import and its usage from the icon row (line 163). The header keeps Search and Cart icons only.
 
-```typescript
-if (!authLoading && !user) return null;
-```
+### Router Update
+- **`src/App.tsx`** -- remove the `/auth` and `/account` routes, and remove their imports
 
-This ensures the page never renders content for unauthenticated users.
+## What Stays
 
-### 2. Fix the loading state when there's no user
+- **Size Recommender** (`SizeRecommenderModal`, `SizeGuideModal`, `sizeStore`, `size-data`) -- fully intact, unchanged
+- Size data is already persisted in `localStorage` via Zustand's `persist` middleware, so returning customers will see their saved size recommendations without needing an account
+- **Size Guide page** (`/size-guide`) -- stays as-is
+- All shopping features (cart, products, collections, Shopify integration)
+- Contact page, About page, Product Care page
 
-In the profile-fetching `useEffect`, set `setLoading(false)` in the early return when `!user`:
+## Edge Functions (no changes needed)
 
-```typescript
-if (!user) {
-  setLoading(false);
-  return;
-}
-```
+The backend edge functions (`request-otp`, `verify-otp`, `sync-shopify-customer`, etc.) and database tables (`profiles`, `email_otps`) will remain deployed but simply won't be called from the frontend anymore. They can be cleaned up separately later if desired.
 
-This prevents the infinite spinner for logged-out users and lets the redirect happen cleanly.
+## Technical Details
 
-## Files Modified
+### Files Deleted (7 files)
+1. `src/pages/Auth.tsx`
+2. `src/pages/Account.tsx`
+3. `src/components/layout/UserMenu.tsx`
+4. `src/components/ProfileSetupForm.tsx`
+5. `src/components/CountryCodeSelect.tsx`
+6. `src/hooks/useAuth.ts`
+7. `src/lib/country-codes.ts`
 
-- **`src/pages/Account.tsx`** -- two small guard fixes (no layout or logic changes)
+### Files Modified (2 files)
 
+1. **`src/App.tsx`**
+   - Remove imports: `Auth`, `Account`
+   - Remove routes: `/auth`, `/account`
+
+2. **`src/components/layout/Header.tsx`**
+   - Remove `import UserMenu` (line 3)
+   - Remove `<UserMenu />` from the icons section (line 163)
