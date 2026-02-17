@@ -102,7 +102,10 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
   const currencySymbol = currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(value) => {
+      // Prevent close event from bubbling to parent Link
+      setOpen(value);
+    }}>
       <DialogTrigger asChild>
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
@@ -111,7 +114,12 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
           <ShoppingBag className="h-4 w-4 text-white" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] rounded-lg p-5">
+      <DialogContent
+        className="max-w-[90vw] rounded-lg p-5"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDownOutside={(e) => e.stopPropagation()}
+        onInteractOutside={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle className="text-sm font-medium text-left">{node.title}</DialogTitle>
           <p className="text-sm text-muted-foreground text-left">{currencySymbol}{price.toFixed(2)}</p>
