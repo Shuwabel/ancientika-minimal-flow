@@ -1,119 +1,141 @@
 
 
-# Shop Page Redesign: Control Bar, View Modes, and Enhanced Filters
+# Redesign Shop/Collection Page to Match Reference
 
 ## Overview
 
-Rebuild the Shop/Collection page with a sticky control bar, three view modes, dynamic filter counts, and filters closed by default.
+Rebuild the Shop page to match the reference image: reduced hero, left sidebar filters, right-side product grid with sort and count header.
 
-## Layout Structure
+## Layout Structure (Reference)
 
 ```text
 +----------------------------------------------------------+
-|                    HEADER (sticky, z-40)                  |
+|                    HEADER (existing)                      |
 +----------------------------------------------------------+
-|              HERO (50% height, title centered)            |
+|              HERO (50% shorter, title bottom-left)        |
 +----------------------------------------------------------+
-| Collection Title  |  count  |  [view icons]  Sort v      | <-- sticky control bar
-+----------------------------------------------------------+
-|                   |                                       |
-|  FILTERS (sticky) |  Product Grid (view-mode dependent)  |
-|  closed by default|                                       |
-|  Availability     |                                       |
-|  Price            |                                       |
-|  Size             |                                       |
+|                                                          |
+|  LEFT SIDEBAR        |  "91 products"    "Best selling v" |
+|                      |                                    |
+|  Availability  v     |  [product] [product] [product]    |
+|  Price         v     |  [product] [product] [product]    |
+|  Size          v     |                                    |
+|  FILTER BY     v     |                                    |
+|                      |                                    |
 +----------------------------------------------------------+
 ```
 
 ## Changes
 
-### 1. Hero Banner
+### 1. Hero Banner -- 50% Height Reduction
 
-Already at `clamp(150px, 22vh, 300px)` -- no change needed. Title stays bottom-left.
+- Change from `clamp(300px, 45vh, 600px)` to `clamp(150px, 22vh, 300px)`
+- Keep title bottom-left, full-width, object-cover
+- Remove product count from hero (it moves to the grid header)
 
-### 2. Sticky Collection Control Bar
+### 2. Replace Sticky Toolbar with Sidebar + Grid Header Layout
 
-Add a new sticky bar between the hero and the sidebar+grid layout:
+**Remove entirely**: The current sticky toolbar with category selector, filter button, grid toggle, and collapsible filter panel.
 
-- **Left side**: Collection title + product count (e.g. "Bottoms -- 3 products")
-- **Right side**: View mode selector buttons (3 icons) + Sort dropdown
-- Sticky under header: `sticky top-16 z-30 bg-background border-b`
-- Right-side controls use `ml-auto` to push to far right edge
+**New desktop layout** (two-column):
+- **Left sidebar** (~200px wide, sticky): Collapsible sections stacked vertically:
+  - **Availability** -- chevron toggle, reveals "In stock" / "Out of stock" checkboxes
+  - **Price** -- chevron toggle, reveals a dual-thumb range slider (using existing Slider component) with min/max currency labels
+  - **Size** -- chevron toggle, reveals size toggle buttons (only sizes present in current collection)
+  - **FILTER BY** -- chevron toggle (for any additional future filters), or a clear-all button
+- **Right content area**: 
+  - **Header row**: product count on left ("X products"), sort dropdown on right ("Best selling")
+  - **Product grid**: 3 columns on desktop, 2 on mobile
 
-### 3. View Mode Selector
+**Mobile layout**: Sidebar collapses into a Sheet/drawer triggered by a filter button; sort dropdown and product count remain visible above the grid.
 
-Three view modes stored in state (`viewMode: "large" | "small" | "list"`):
+### 3. Filter Functionality
 
-| Mode  | Desktop     | Tablet      | Mobile     |
-|-------|-------------|-------------|------------|
-| Large | 2 columns   | 2 columns   | 1 column   |
-| Small | 3 columns   | 3 columns   | 2 columns  |
-| List  | full-width rows | full-width rows | stacked |
+**Availability**: Two checkboxes -- "In stock" and "Out of stock". Filters by `availableForSale`.
 
-**Large view**: `grid-cols-1 md:grid-cols-2` with taller product cards
-**Small view**: `grid-cols-2 md:grid-cols-3` (current default)
-**List view**: `grid-cols-1` -- each item is a horizontal row with image on left (~40% width) and details on right. Row height sized so ~3.5 rows visible before scrolling.
+**Price**: Dual-thumb Slider component. Min = 0, Max = dynamically computed highest price in collection. Instant filtering on drag. Display formatted currency values.
 
-Icons: Use `LayoutGrid` (small), `Grid2x2` (large), and `List` (list) from lucide-react. Active icon gets a visual indicator (darker/underlined).
+**Size**: Only show sizes that exist in current collection products. Multiple selection via toggle buttons.
 
-### 4. Filters -- Closed by Default + Counts
+**Sort options** (renamed):
+- Best selling (default/featured)
+- Newest
+- Price: Low to High
+- Price: High to Low
 
-Change initial state of all collapsible sections from `true` to `false`:
-- `availabilityOpen: false`
-- `priceOpen: false`  
-- `sizeOpen: false`
+### 4. Product Grid
 
-Add dynamic counts next to availability options, computed from collection products:
-- "In stock (X)" -- count of products where `availableForSale === true`
-- "Out of stock (X)" -- count where `availableForSale === false`
+- Desktop: fixed 3 columns
+- Mobile: 2 columns
+- Centered, consistent spacing
+- No scroll snapping
+- Existing hover behavior preserved
 
-### 5. Mobile Filters
+### 5. State Changes
 
-Keep the existing Sheet-based mobile filter drawer. Add the filter toggle button to the control bar on mobile (left side, replacing the current inline position).
+- Remove `gridCols` state and `getGridClass` function
+- Remove `GRID_OPTIONS` constant
+- Replace `minPrice`/`maxPrice` string states with `priceRange: [number, number]` numeric state
+- Add computed `maxPriceInCollection` from products
+- Add `outOfStockOnly` boolean state
+- Add collapsible open/close state for each sidebar section
 
 ## Technical Details
 
-### File: `src/pages/Shop.tsx`
+### File: `src/pages/Shop.tsx` (major rewrite)
 
-**New imports**: Add `LayoutGrid, Grid2x2, List` from lucide-react.
+**Imports**: Add `Collapsible, CollapsibleTrigger, CollapsibleContent` from ui, `Slider` from ui. Remove `SlidersHorizontal, LayoutGrid, Grid3x3` icons. Remove `Sheet` (desktop sidebar replaces it; keep Sheet for mobile only).
 
-**New state**:
-- `viewMode: "large" | "small" | "list"` -- default `"small"` (current 3-col behavior)
+**Constants**:
+- Update `SORT_OPTIONS` to: Best selling, Newest, Price low-high, Price high-low (remove Alphabetical)
+- Remove `GRID_OPTIONS` and `getGridClass`
 
-**Changed initial state**:
-- `availabilityOpen` from `true` to `false`
-- `priceOpen` from `true` to `false`
-- `sizeOpen` from `true` to `false`
+**State**:
+- Remove `gridCols`, `filtersOpen`
+- Replace `minPrice`/`maxPrice` strings with `priceRange: [number, number]`
+- Add `showOutOfStock` boolean
+- Add `availabilityOpen`, `priceOpen`, `sizeOpen` booleans for collapsible sections
 
-**New computed values**:
-- `inStockCount`: number of collection products with `availableForSale === true`
-- `outOfStockCount`: number of collection products with `availableForSale === false`
+**Computed values**:
+- `maxPriceInCollection`: derived from filtered-by-category products, used as slider max
+- `availableSizes`: filter to only sizes in current category, not all products
 
-**Grid class logic**:
+**Hero**: Reduce height to `clamp(150px, 22vh, 300px)`, remove product count from overlay.
+
+**Body layout**: 
 ```
-function getGridClass(viewMode) {
-  switch(viewMode) {
-    case "large": return "grid-cols-1 md:grid-cols-2"
-    case "small": return "grid-cols-2 md:grid-cols-3"  
-    case "list": return "grid-cols-1"
-  }
-}
+<div className="container py-8">
+  <div className="flex gap-8">
+    {/* Sidebar - hidden on mobile */}
+    <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start space-y-4">
+      {/* Collapsible: Availability */}
+      {/* Collapsible: Price (with Slider) */}
+      {/* Collapsible: Size */}
+      {/* Clear filters button */}
+    </aside>
+    
+    {/* Main content */}
+    <div className="flex-1">
+      {/* Header: count + sort */}
+      <div className="flex items-center justify-between mb-6">
+        <span>X products</span>
+        <Select>Best selling</Select>
+      </div>
+      {/* Grid: 3 cols desktop, 2 mobile */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        ...products
+      </div>
+    </div>
+  </div>
+</div>
 ```
 
-**List view rendering**: When `viewMode === "list"`, render each product as a horizontal card (flexbox row) instead of a standard ProductCard. Image on left (~200px height to fit ~3.5 visible), title + price + description on right.
-
-**Sticky control bar**: New `div` between hero and main content area with `sticky top-16 z-30 bg-background/95 backdrop-blur border-b`. Contains:
-- Left: collection title + count
-- Right: three icon buttons for view mode + sort dropdown, using `flex items-center gap-2 ml-auto`
-
-**Availability filter labels**: Change from "In stock" to "In stock (X)" using the computed counts.
-
-### File: `src/components/ProductCard.tsx`
-
-No changes needed -- the existing `aspectRatio` prop and component structure already supports different grid layouts.
-
-### Files Modified
-- `src/pages/Shop.tsx` -- control bar, view modes, filter defaults, availability counts
+**Mobile**: Show a filter button that opens a Sheet with the same filter content. Sort dropdown stays visible above grid.
 
 ### No new files created
 ### No files deleted
+
+### Dependencies already installed
+- `@radix-ui/react-slider` -- for price range slider
+- `@radix-ui/react-collapsible` -- for sidebar accordion sections
+
