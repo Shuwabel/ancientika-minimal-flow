@@ -6,7 +6,7 @@ import { fetchCollections } from "@/lib/shopify";
 import { useQuery } from "@tanstack/react-query";
 import mochaLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import PredictiveSearch from "@/components/PredictiveSearch";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -22,6 +22,13 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Lock body scroll when search is open
+  useEffect(() => {
+    document.body.style.overflow = searchOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [searchOpen]);
 
   const { data: collections = [] } = useQuery({
     queryKey: ['shopify-collections'],
@@ -54,7 +61,7 @@ export default function Header() {
   }, [searchOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border">
+    <header ref={headerRef} className="sticky top-0 z-40 border-b border-border">
       <AnimatePresence mode="wait">
         {searchOpen ? (
           <motion.div
@@ -162,7 +169,7 @@ export default function Header() {
           </motion.div>
         )}
       </AnimatePresence>
-      <PredictiveSearch open={searchOpen} query={searchQuery} onClose={closeSearch} onNavigate={(path) => { closeSearch(); navigate(path); }} />
+      <PredictiveSearch open={searchOpen} query={searchQuery} onClose={closeSearch} onNavigate={(path) => { closeSearch(); navigate(path); }} headerRef={headerRef} />
     </header>
   );
 }
