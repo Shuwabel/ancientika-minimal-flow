@@ -83,7 +83,7 @@ export default function Header() {
                   placeholder="Search products, collections..."
                   className="flex-1 bg-transparent text-accent-foreground text-sm outline-none placeholder:text-accent-foreground/50"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && searchQuery.length >= 2) {
+                    if (e.key === "Enter" && searchQuery.length >= 1) {
                       closeSearch();
                       navigate(`/shop?q=${encodeURIComponent(searchQuery)}`);
                     }

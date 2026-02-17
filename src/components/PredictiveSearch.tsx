@@ -48,7 +48,7 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate, hea
 
   // Debounced search
   const doSearch = useCallback(async (q: string) => {
-    if (q.length < 2) {
+    if (q.length < 1) {
       setProducts([]);
       setCollections([]);
       setSearchState("idle");
@@ -82,7 +82,7 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate, hea
   }, [query, doSearch]);
 
   const handleShowAll = () => {
-    if (query.length >= 2) {
+    if (query.length >= 1) {
       onNavigate(`/shop?q=${encodeURIComponent(query)}`);
     }
   };
@@ -97,7 +97,7 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate, hea
     : [];
 
   // Show panel when query is long enough and not idle
-  const showPanel = open && query.length >= 2 && searchState !== "idle";
+  const showPanel = open && query.length >= 1 && searchState !== "idle";
 
   if (!showPanel) return null;
 
