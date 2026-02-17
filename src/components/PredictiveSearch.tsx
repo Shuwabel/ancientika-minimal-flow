@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { fetchProducts, fetchCollections, type ShopifyProduct, type ShopifyCollection } from "@/lib/shopify";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+type SearchState = "idle" | "loading" | "results" | "empty";
+
 interface PredictiveSearchProps {
   open: boolean;
   query: string;
@@ -11,10 +13,15 @@ interface PredictiveSearchProps {
   onNavigate: (path: string) => void;
 }
 
+function normalizeArray<T>(val: unknown): T[] {
+  return Array.isArray(val) ? val : [];
+}
+
 export default function PredictiveSearch({ open, query, onClose, onNavigate }: PredictiveSearchProps) {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [collections, setCollections] = useState<ShopifyCollection[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [fallbackCollections, setFallbackCollections] = useState<ShopifyCollection[]>([]);
+  const [searchState, setSearchState] = useState<SearchState>("idle");
   const isMobile = useIsMobile();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -24,6 +31,7 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
     if (!open) {
       setProducts([]);
       setCollections([]);
+      setSearchState("idle");
     }
   }, [open]);
 
@@ -35,34 +43,44 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
         onClose();
       }
     };
-    // Delay to avoid immediate close from the same click
     const timer = setTimeout(() => document.addEventListener("mousedown", handler), 100);
     return () => { clearTimeout(timer); document.removeEventListener("mousedown", handler); };
   }, [open, onClose]);
+
+  // Load fallback collections once
+  useEffect(() => {
+    if (fallbackCollections.length > 0) return;
+    fetchCollections(10)
+      .then(cols => setFallbackCollections(normalizeArray(cols)))
+      .catch(() => setFallbackCollections([]));
+  }, [fallbackCollections.length]);
 
   // Debounced search
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) {
       setProducts([]);
       setCollections([]);
+      setSearchState("idle");
       return;
     }
-    setLoading(true);
+    setSearchState("loading");
     try {
-      const [prods, cols] = await Promise.all([
-        fetchProducts(4, q),
-        fetchCollections(10),
+      const [rawProds, rawCols] = await Promise.all([
+        fetchProducts(4, q).catch(() => []),
+        fetchCollections(10).catch(() => []),
       ]);
-      setProducts(prods.slice(0, 4));
-      const filtered = cols.filter(c =>
-        c.node.title.toLowerCase().includes(q.toLowerCase())
-      ).slice(0, 3);
+      const prods = normalizeArray<ShopifyProduct>(rawProds).slice(0, 4);
+      const filtered = normalizeArray<ShopifyCollection>(rawCols)
+        .filter(c => c?.node?.title?.toLowerCase().includes(q.toLowerCase()))
+        .slice(0, 3);
+
+      setProducts(prods);
       setCollections(filtered);
+      setSearchState(prods.length > 0 || filtered.length > 0 ? "results" : "empty");
     } catch {
       setProducts([]);
       setCollections([]);
-    } finally {
-      setLoading(false);
+      setSearchState("empty");
     }
   }, []);
 
@@ -78,18 +96,19 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
     }
   };
 
-  const suggestions = query.length >= 2
+  const suggestions = searchState === "results"
     ? [
-        ...products.map(p => p.node.title),
-        ...collections.map(c => c.node.title),
+        ...products.map(p => p?.node?.title).filter(Boolean),
+        ...collections.map(c => c?.node?.title).filter(Boolean),
       ]
         .filter((t, i, arr) => arr.indexOf(t) === i)
         .slice(0, 3)
     : [];
 
-  const hasResults = query.length >= 2 && (products.length > 0 || collections.length > 0 || loading);
+  // Show panel when query is long enough and not idle
+  const showPanel = open && query.length >= 2 && searchState !== "idle";
 
-  if (!open || !hasResults) return null;
+  if (!showPanel) return null;
 
   return (
     <AnimatePresence>
@@ -104,28 +123,43 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
         }`}
       >
         <div className={`max-h-[70vh] overflow-y-auto ${isMobile ? "p-4 space-y-5" : "p-6"}`}>
-          {isMobile ? (
-            <MobileResults
-              suggestions={suggestions}
-              collections={collections}
-              products={products}
-              loading={loading}
-              onSetQuery={() => {}}
-              onNavigate={onNavigate}
-            />
-          ) : (
-            <DesktopResults
-              suggestions={suggestions}
-              collections={collections}
-              products={products}
-              loading={loading}
-              onSetQuery={() => {}}
+          {searchState === "loading" && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Searching…</span>
+            </div>
+          )}
+
+          {searchState === "empty" && (
+            <EmptyState
+              query={query}
+              fallbackCollections={fallbackCollections}
               onNavigate={onNavigate}
             />
           )}
+
+          {searchState === "results" && (
+            <>
+              {isMobile ? (
+                <MobileResults
+                  suggestions={suggestions}
+                  collections={collections}
+                  products={products}
+                  onNavigate={onNavigate}
+                />
+              ) : (
+                <DesktopResults
+                  suggestions={suggestions}
+                  collections={collections}
+                  products={products}
+                  onNavigate={onNavigate}
+                />
+              )}
+            </>
+          )}
         </div>
 
-        {(products.length > 0 || collections.length > 0) && (
+        {searchState === "results" && (products.length > 0 || collections.length > 0) && (
           <div className="border-t border-border px-4 py-3">
             <button
               onClick={handleShowAll}
@@ -141,23 +175,60 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
   );
 }
 
+// --- Empty State ---
+
+function EmptyState({ query, fallbackCollections, onNavigate }: {
+  query: string;
+  fallbackCollections: ShopifyCollection[];
+  onNavigate: (path: string) => void;
+}) {
+  const safeCollections = normalizeArray<ShopifyCollection>(fallbackCollections).slice(0, 3);
+
+  return (
+    <div className="py-6 text-center space-y-4">
+      <div>
+        <p className="text-sm font-medium">No results found for &ldquo;{query}&rdquo;</p>
+        <p className="text-xs text-muted-foreground mt-1">Try a different keyword or browse our collections.</p>
+      </div>
+      {safeCollections.length > 0 && (
+        <div className="text-left">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Browse Collections</p>
+          <div className="space-y-1">
+            {safeCollections.map((col) => (
+              <button
+                key={col.node?.handle || col.node?.id}
+                onClick={() => onNavigate(`/shop?category=${col.node?.handle}`)}
+                className="block w-full text-left text-sm py-1.5 hover:text-accent transition-colors"
+              >
+                {col.node?.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Sub-components ---
 
-function MobileResults({ suggestions, collections, products, loading, onNavigate }: {
+function MobileResults({ suggestions, collections, products, onNavigate }: {
   suggestions: string[];
   collections: ShopifyCollection[];
   products: ShopifyProduct[];
-  loading: boolean;
-  onSetQuery: (q: string) => void;
   onNavigate: (path: string) => void;
 }) {
+  const safeProducts = normalizeArray<ShopifyProduct>(products);
+  const safeCollections = normalizeArray<ShopifyCollection>(collections);
+  const safeSuggestions = normalizeArray<string>(suggestions);
+
   return (
     <>
-      {suggestions.length > 0 && (
+      {safeSuggestions.length > 0 && (
         <div>
           <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Suggestions</p>
           <div className="space-y-1">
-            {suggestions.map((s) => (
+            {safeSuggestions.map((s) => (
               <button key={s} className="flex items-center gap-2 w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
                 <Search className="h-3.5 w-3.5 text-muted-foreground" />
                 {s}
@@ -166,51 +237,50 @@ function MobileResults({ suggestions, collections, products, loading, onNavigate
           </div>
         </div>
       )}
-      {collections.length > 0 && (
+      {safeCollections.length > 0 && (
         <div>
           <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Collections</p>
           <div className="space-y-1">
-            {collections.map((col) => (
-              <button key={col.node.handle} onClick={() => onNavigate(`/shop?category=${col.node.handle}`)} className="block w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
-                {col.node.title}
+            {safeCollections.map((col) => (
+              <button key={col.node?.handle} onClick={() => onNavigate(`/shop?category=${col.node?.handle}`)} className="block w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
+                {col.node?.title}
               </button>
             ))}
           </div>
         </div>
       )}
-      {products.length > 0 && (
+      {safeProducts.length > 0 && (
         <div>
           <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Products</p>
           <div className="space-y-3">
-            {products.map((p) => (
-              <ProductRow key={p.node.id} product={p} onNavigate={onNavigate} />
+            {safeProducts.map((p) => (
+              <ProductRow key={p.node?.id} product={p} onNavigate={onNavigate} />
             ))}
           </div>
         </div>
-      )}
-      {!loading && products.length === 0 && collections.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-6">No results found</p>
       )}
     </>
   );
 }
 
-function DesktopResults({ suggestions, collections, products, loading, onNavigate }: {
+function DesktopResults({ suggestions, collections, products, onNavigate }: {
   suggestions: string[];
   collections: ShopifyCollection[];
   products: ShopifyProduct[];
-  loading: boolean;
-  onSetQuery: (q: string) => void;
   onNavigate: (path: string) => void;
 }) {
+  const safeProducts = normalizeArray<ShopifyProduct>(products);
+  const safeCollections = normalizeArray<ShopifyCollection>(collections);
+  const safeSuggestions = normalizeArray<string>(suggestions);
+
   return (
     <div className="grid grid-cols-[1fr_1.5fr] gap-8">
       <div className="space-y-6">
-        {suggestions.length > 0 && (
+        {safeSuggestions.length > 0 && (
           <div>
             <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Suggestions</p>
             <div className="space-y-1">
-              {suggestions.map((s) => (
+              {safeSuggestions.map((s) => (
                 <button key={s} className="flex items-center gap-2 w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
                   <Search className="h-3.5 w-3.5 text-muted-foreground" />
                   {s}
@@ -219,13 +289,13 @@ function DesktopResults({ suggestions, collections, products, loading, onNavigat
             </div>
           </div>
         )}
-        {collections.length > 0 && (
+        {safeCollections.length > 0 && (
           <div>
             <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Collections</p>
             <div className="space-y-1">
-              {collections.map((col) => (
-                <button key={col.node.handle} onClick={() => onNavigate(`/shop?category=${col.node.handle}`)} className="block w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
-                  {col.node.title}
+              {safeCollections.map((col) => (
+                <button key={col.node?.handle} onClick={() => onNavigate(`/shop?category=${col.node?.handle}`)} className="block w-full text-left text-sm py-1.5 hover:text-accent transition-colors">
+                  {col.node?.title}
                 </button>
               ))}
             </div>
@@ -234,26 +304,28 @@ function DesktopResults({ suggestions, collections, products, loading, onNavigat
       </div>
       <div>
         <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Products</p>
-        {products.length > 0 ? (
+        {safeProducts.length > 0 ? (
           <div className="space-y-3">
-            {products.map((p) => (
-              <ProductRow key={p.node.id} product={p} onNavigate={onNavigate} />
+            {safeProducts.map((p) => (
+              <ProductRow key={p.node?.id} product={p} onNavigate={onNavigate} />
             ))}
           </div>
-        ) : !loading ? (
+        ) : (
           <p className="text-sm text-muted-foreground py-4">No products found</p>
-        ) : null}
+        )}
       </div>
     </div>
   );
 }
 
 function ProductRow({ product, onNavigate }: { product: ShopifyProduct; onNavigate: (path: string) => void }) {
+  if (!product?.node) return null;
   const node = product.node;
-  const price = parseFloat(node.priceRange.minVariantPrice.amount);
-  const currency = node.priceRange.minVariantPrice.currencyCode;
+  const amount = node.priceRange?.minVariantPrice?.amount;
+  const price = amount ? parseFloat(amount) : 0;
+  const currency = node.priceRange?.minVariantPrice?.currencyCode || "USD";
   const currencySymbol = currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency;
-  const imageUrl = node.images.edges[0]?.node.url;
+  const imageUrl = node.images?.edges?.[0]?.node?.url;
 
   return (
     <button
@@ -261,7 +333,7 @@ function ProductRow({ product, onNavigate }: { product: ShopifyProduct; onNaviga
       className="flex items-center gap-3 w-full text-left hover:bg-muted/50 rounded-sm p-1.5 transition-colors"
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={node.title} className="h-14 w-14 object-cover rounded-sm shrink-0" />
+        <img src={imageUrl} alt={node.title || ""} className="h-14 w-14 object-cover rounded-sm shrink-0" />
       ) : (
         <div className="h-14 w-14 bg-muted rounded-sm shrink-0" />
       )}
