@@ -305,7 +305,7 @@ export default function ProductDetail() {
       {related.length > 0 && (
         <section className="mt-20 pt-10 border-t border-border">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-6 text-center">You May Also Like</h2>
-          <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 no-scrollbar">
+          <div className="flex justify-center gap-3 overflow-x-auto scroll-smooth pb-2 no-scrollbar">
             {related.map((p) => (
               <div key={p.node.id} className="shrink-0 grow-0" style={{ width: "clamp(150px, 20vw, 240px)" }}>
                 <ProductCard product={p} aspectRatio="1/1" />
