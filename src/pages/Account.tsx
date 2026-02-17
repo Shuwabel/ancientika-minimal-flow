@@ -51,11 +51,11 @@ export default function Account() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       if (data) {
         setProfile(data as unknown as Profile);
         // Parse phone into dial code + number
@@ -71,6 +71,18 @@ export default function Account() {
             setPhoneNumber(phone);
           }
         }
+      } else {
+        // No profile row yet — create one and set defaults
+        const newProfile: Profile = {
+          email: user.email || null,
+          first_name: null, last_name: null, phone: null,
+          gender: null, height: null, height_unit: "cm",
+          weight: null, weight_unit: "kg", body_shape: null,
+          fit_preference: null, address_line1: null, address_line2: null,
+          city: null, state: null, postal_code: null, country: "Nigeria",
+        };
+        await supabase.from("profiles").insert({ user_id: user.id, email: user.email, country: "Nigeria" });
+        setProfile(newProfile);
       }
       setLoading(false);
     })();
