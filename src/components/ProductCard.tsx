@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import type { ShopifyProduct } from "@/lib/shopify";
-import { useWishlistStore } from "@/stores/wishlistStore";
 import { Badge } from "@/components/ui/badge";
 import QuickAddPopover from "@/components/QuickAddPopover";
 import MobileQuickAdd from "@/components/MobileQuickAdd";
@@ -13,8 +12,6 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
   const [hovered, setHovered] = useState(false);
   const isMobile = useIsMobile();
   const node = product.node;
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const wishlisted = isInWishlist(node.id);
 
   const price = parseFloat(node.priceRange.minVariantPrice.amount);
   const currency = node.priceRange.minVariantPrice.currencyCode;
@@ -59,41 +56,23 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
             <MobileQuickAdd product={product} />
           )}
 
-          {/* Mobile: always-visible wishlist */}
-          {isMobile && (
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleItem(node.id); }}
-              className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
-            >
-              <Heart className={`h-4 w-4 ${wishlisted ? "fill-red-500 text-red-500" : "text-foreground"}`} />
-            </button>
-          )}
-
-          {/* Desktop: hover icons */}
-          {!isMobile && (
+          {/* Desktop: hover quick-add */}
+          {!isMobile && node.availableForSale && (
             <AnimatePresence>
-              {(hovered || wishlisted) && (
+              {hovered && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-2 right-2 flex flex-col gap-1.5 z-10"
+                  className="absolute top-2 right-2 z-10"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 >
-                  <button
-                    onClick={() => toggleItem(node.id)}
-                    className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-background transition-colors"
-                  >
-                    <Heart className={`h-4 w-4 transition-colors ${wishlisted ? "fill-red-500 text-red-500" : "text-foreground"}`} />
-                  </button>
-                  {node.availableForSale && (
-                    <QuickAddPopover product={product}>
-                      <button className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-background transition-colors">
-                        <ShoppingBag className="h-4 w-4 text-foreground" />
-                      </button>
-                    </QuickAddPopover>
-                  )}
+                  <QuickAddPopover product={product}>
+                    <button className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-background transition-colors">
+                      <ShoppingBag className="h-4 w-4 text-foreground" />
+                    </button>
+                  </QuickAddPopover>
                 </motion.div>
               )}
             </AnimatePresence>
