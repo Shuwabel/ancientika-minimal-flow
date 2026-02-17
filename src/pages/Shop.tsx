@@ -229,10 +229,10 @@ export default function Shop() {
   );
 
   return (
-    <div className="container py-10">
+    <div>
       {/* Category Hero Banner or Simple Title */}
       {activeCollection?.node.image ? (
-        <div className="relative w-full aspect-[21/9] mb-6 rounded-sm overflow-hidden">
+        <div className="relative w-full overflow-hidden" style={{ height: 'clamp(300px, 45vh, 600px)' }}>
           <img
             src={activeCollection.node.image.url}
             alt={activeCollection.node.image.altText || categoryTitle}
@@ -249,17 +249,19 @@ export default function Shop() {
           </div>
         </div>
       ) : (
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-3xl md:text-4xl font-light text-center mb-10"
-        >
-          {categoryTitle}
-        </motion.h1>
+        <div className="container pt-10">
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-3xl md:text-4xl font-light text-center mb-10"
+          >
+            {categoryTitle}
+          </motion.h1>
+        </div>
       )}
 
       {/* Sticky Toolbar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4 md:-mx-0 md:px-0 pb-3 pt-1 mb-6 space-y-2">
+      <div className="sticky top-16 z-30 bg-background backdrop-blur-sm border-b border-border px-4 md:px-8 pb-3 pt-1 mb-6 space-y-2">
         {/* Main bar: [Category] [Filters] [spacer] [Search] [Grid] */}
         <div className="flex items-center gap-2">
           {/* Category selector */}
@@ -483,32 +485,34 @@ export default function Shop() {
       </div>
 
       {/* Product Grid */}
-      {isLoading ? (
-        <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="aspect-square w-full rounded-sm" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <p className="text-center text-muted-foreground py-20">No products found</p>
-      ) : (
-        <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
-          {filtered.map((product, i) => (
-            <motion.div
-              key={product.node.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-            >
-              <ProductCard product={product} />
-            </motion.div>
-          ))}
-        </div>
-      )}
+      <div className="container py-6">
+        {isLoading ? (
+          <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-sm" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-muted-foreground py-20">No products found</p>
+        ) : (
+          <div className={`grid ${getGridClass(gridCols, !!isMobile)} gap-4`}>
+            {filtered.map((product, i) => (
+              <motion.div
+                key={product.node.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+              >
+                <ProductCard product={product} />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
