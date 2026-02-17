@@ -42,7 +42,10 @@ export default function Header() {
 
   const openSearch = () => {
     setSearchOpen(true);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
+    // Use requestAnimationFrame to ensure the input is rendered before focusing
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
   };
 
   const closeSearch = () => {
