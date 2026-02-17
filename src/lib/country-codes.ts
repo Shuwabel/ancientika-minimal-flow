@@ -6,6 +6,7 @@ export interface CountryCode {
 }
 
 export const countryCodes: CountryCode[] = [
+  { code: "NG", dial: "+234", flag: "🇳🇬", name: "Nigeria" },
   { code: "AR", dial: "+54", flag: "🇦🇷", name: "Argentina" },
   { code: "AU", dial: "+61", flag: "🇦🇺", name: "Australia" },
   { code: "AT", dial: "+43", flag: "🇦🇹", name: "Austria" },
@@ -33,7 +34,6 @@ export const countryCodes: CountryCode[] = [
   { code: "MX", dial: "+52", flag: "🇲🇽", name: "Mexico" },
   { code: "NL", dial: "+31", flag: "🇳🇱", name: "Netherlands" },
   { code: "NZ", dial: "+64", flag: "🇳🇿", name: "New Zealand" },
-  { code: "NG", dial: "+234", flag: "🇳🇬", name: "Nigeria" },
   { code: "NO", dial: "+47", flag: "🇳🇴", name: "Norway" },
   { code: "PK", dial: "+92", flag: "🇵🇰", name: "Pakistan" },
   { code: "PE", dial: "+51", flag: "🇵🇪", name: "Peru" },
