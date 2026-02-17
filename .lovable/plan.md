@@ -1,29 +1,49 @@
 
 
-# Fix Icon Styling — Black Circle Background with White Icons
+# Collection Page Layout and Mobile Fix
 
-## What's Wrong
-The hover icons (Eye and Cart) currently render as bare black-filled SVGs with no background. The reference image shows they should have **solid black circular backgrounds with white icons inside**.
+## 1. Full-Width Collection Hero
 
-## Changes
+**File: `src/pages/Shop.tsx`**
 
-### 1. Desktop Hover Icons (`src/components/ProductCard.tsx`, lines 92-103)
+The hero banner is currently inside `<div className="container py-10">`, constraining it to max-width. Changes:
 
-Update both icon buttons to have a black circular background with white icon color:
+- Move the hero section outside of (above) the container wrapper
+- Remove `container` wrapper from the hero; apply full-width styling
+- Use `width: 100%` with no max-width restriction
+- Set responsive height via `h-[clamp(300px,45vh,600px)]` instead of `aspect-[21/9]`
+- Remove `rounded-sm` (full-bleed should have no border-radius)
+- Keep `object-fit: cover` on the image
+- Remove top padding so hero starts flush under the header
+- The rest of the page content (toolbar + product grid) stays inside a container
 
-- Add `rounded-full bg-black` to each button
-- Change icon classes from `text-foreground fill-foreground` to `text-white` (remove `fill-foreground`)
-- Use `Search` (magnifying glass) icon instead of `Eye` to match the reference image style
+## 2. Sticky Filter Bar Below Header
 
-### 2. Mobile Cart Icon (`src/components/MobileQuickAdd.tsx`, line 107-112)
+**File: `src/pages/Shop.tsx`**
 
-Apply the same black circle + white icon styling:
+The toolbar currently uses `sticky top-0 z-30`. The header is `h-16` (64px) with `sticky top-0 z-40`.
 
-- Add `rounded-full bg-black` to the trigger button
-- Change icon from `text-foreground fill-foreground` to `text-white`
+- Change the toolbar's `top-0` to `top-16` (64px) so it sticks directly below the header
+- Keep `z-30` (below header's `z-40`, above product grid)
+- Add `bg-background` (solid, not transparent) to prevent content showing through
+- Keep `backdrop-blur-sm` and `border-b`
 
-### Files Modified
+## 3. Mobile Quick Add Navigation Bug Fix
+
+**File: `src/components/MobileQuickAdd.tsx`**
+
+The issue: when the Dialog closes, the underlying `<Link>` still receives the click, navigating away. The `onOpenChange` handler on the Dialog doesn't prevent propagation.
+
+- Wrap the Dialog's `onOpenChange` to call `stopPropagation` when closing
+- Add `onClick` with `stopPropagation` on the `DialogContent` itself to prevent any click inside the dialog from bubbling to the parent `<Link>`
+- Ensure the dialog overlay click (close-on-outside) doesn't bubble to the product card link
+
+---
+
+### Technical Details
+
 | File | Change |
 |------|--------|
-| `src/components/ProductCard.tsx` | Add black circle bg + white icons on desktop hover buttons |
-| `src/components/MobileQuickAdd.tsx` | Add black circle bg + white icon on mobile cart trigger |
+| `src/pages/Shop.tsx` | Restructure: hero outside container, full-width; toolbar `top-16` |
+| `src/components/MobileQuickAdd.tsx` | Add `stopPropagation` on DialogContent and overlay to prevent navigation on close |
+
