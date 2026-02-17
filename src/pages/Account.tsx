@@ -256,9 +256,10 @@ export default function Account() {
             <div>
               <label className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2 block">Fit Preference</label>
               <div className="flex flex-wrap gap-2">
-                {["Tight", "Regular", "Loose"].map((f) =>
-                  optionButton(f, profile.fit_preference === f.toLowerCase(), () => updateField("fit_preference", f.toLowerCase()))
-                )}
+              {["Slim Fit", "Baggy"].map((f) => {
+                  const val = f.toLowerCase().replace(" ", "_");
+                  return optionButton(f, profile.fit_preference === val, () => updateField("fit_preference", val));
+                })}
               </div>
             </div>
           </div>

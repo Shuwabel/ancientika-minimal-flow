@@ -101,6 +101,36 @@ async function getCustomerAccessToken(email: string, password: string): Promise<
   return result?.data?.customerAccessTokenCreate?.customerAccessToken?.accessToken || null;
 }
 
+// Map common country names to ISO 3166-1 alpha-2 codes for Shopify
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  "argentina": "AR", "australia": "AU", "austria": "AT", "bangladesh": "BD",
+  "belgium": "BE", "brazil": "BR", "canada": "CA", "chile": "CL",
+  "china": "CN", "colombia": "CO", "denmark": "DK", "egypt": "EG",
+  "finland": "FI", "france": "FR", "germany": "DE", "ghana": "GH",
+  "india": "IN", "indonesia": "ID", "ireland": "IE", "israel": "IL",
+  "italy": "IT", "japan": "JP", "kenya": "KE", "malaysia": "MY",
+  "mexico": "MX", "netherlands": "NL", "new zealand": "NZ", "nigeria": "NG",
+  "norway": "NO", "pakistan": "PK", "peru": "PE", "philippines": "PH",
+  "poland": "PL", "portugal": "PT", "russia": "RU", "saudi arabia": "SA",
+  "singapore": "SG", "south africa": "ZA", "south korea": "KR", "spain": "ES",
+  "sweden": "SE", "switzerland": "CH", "thailand": "TH", "turkey": "TR",
+  "uae": "AE", "united arab emirates": "AE", "united kingdom": "GB",
+  "united states": "US", "vietnam": "VN",
+};
+
+function resolveCountryCode(country: string): string {
+  const trimmed = country.trim();
+  // Already a 2-letter code
+  if (/^[A-Z]{2}$/.test(trimmed)) return trimmed;
+  return COUNTRY_NAME_TO_CODE[trimmed.toLowerCase()] || trimmed;
+}
+
+function isValidState(state: unknown): state is string {
+  if (!state || typeof state !== "string") return false;
+  const s = state.trim().toLowerCase();
+  return s.length > 0 && !s.startsWith("select");
+}
+
 function buildAddressInput(profile: Record<string, unknown>): Record<string, string> | null {
   if (!profile.address_line1 || !profile.city) return null;
   const address: Record<string, string> = {
@@ -108,9 +138,9 @@ function buildAddressInput(profile: Record<string, unknown>): Record<string, str
     city: profile.city as string,
   };
   if (profile.address_line2) address.address2 = profile.address_line2 as string;
-  if (profile.state) address.province = profile.state as string;
+  if (isValidState(profile.state)) address.province = profile.state as string;
   if (profile.postal_code) address.zip = profile.postal_code as string;
-  if (profile.country) address.country = profile.country as string;
+  if (profile.country) address.country = resolveCountryCode(profile.country as string);
   if (profile.first_name) address.firstName = profile.first_name as string;
   if (profile.last_name) address.lastName = profile.last_name as string;
   if (profile.phone) address.phone = profile.phone as string;
