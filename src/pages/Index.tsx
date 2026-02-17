@@ -44,12 +44,12 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
       ) : products.length > 0 ? (
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
         >
           {products.map((product) => (
             <div
               key={product.node.id}
-              className="snap-start shrink-0 grow-0"
+              className="shrink-0 grow-0"
               style={{ width: "clamp(150px, 20vw, 240px)" }}
             >
               <ProductCard product={product} aspectRatio="1/1" />
