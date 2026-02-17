@@ -1,36 +1,30 @@
 
 
-# Fix: Center-Align Content, Not Images
+# Center-Align the Shop by Category Grid
 
 ## Problem
 
-1. **Shop by Category**: Images are shrunk to 75% and centered inside tiles (`w-3/4 h-3/4 object-contain`). They should fill the entire tile (`w-full h-full object-cover`). The grid container itself is already centered -- that part is fine.
+The Shop by Category grid uses CSS Grid (`grid grid-cols-3 ...`), which places items left-to-right. When the last row has fewer items than columns, those items sit on the left side, leaving empty space on the right -- unlike the Featured carousel which centers its items beautifully.
 
-2. **Featured carousel**: Items are left-aligned using `flex` with left padding. When there are fewer items than fill the row, empty space appears on the right.
+## Solution
 
-3. **You May Also Like carousel** (ProductDetail page): Same left-alignment issue.
+Replace the CSS Grid with a flexbox layout that uses `justify-center` and `flex-wrap`, matching the same center-alignment approach that works so well in the Featured section. Each tile gets a fixed responsive width to maintain the square proportions and column density.
 
 ## Changes
 
-### 1. `src/pages/Index.tsx` -- Shop by Category tiles
+### `src/pages/Index.tsx` -- Shop by Category grid
 
-Revert the image sizing back to full-tile coverage:
-- Change `w-3/4 h-3/4 object-contain` to `w-full h-full object-cover`
-- Remove the `flex items-center justify-center` from the tile wrapper (no longer needed when image fills the tile)
+For both the skeleton loader and the actual collection grid:
 
-### 2. `src/pages/Index.tsx` -- FeaturedCarousel
+- Change from `grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4` to `flex flex-wrap justify-center gap-3 md:gap-4`
+- Give each tile a fixed width that mimics the current column behavior:
+  - On mobile (3 columns): `calc((100% - 1.5rem) / 3)` -- roughly 30% of container
+  - This naturally increases columns as the container widens, capping at ~6 on desktop thanks to the `max-w-5xl` container
+- The `max-w-5xl mx-auto` container stays, keeping everything bounded and centered
 
-Change the flex container from left-aligned to center-aligned:
-- Add `justify-center` to the flex container so items spread from center
-- Keep `overflow-x-auto` so it still scrolls when items exceed viewport width
-- This means when there are few items, they sit centered; when many, they scroll naturally
-
-### 3. `src/pages/ProductDetail.tsx` -- You May Also Like
-
-Same fix as Featured:
-- Add `justify-center` to the flex container so items populate from center outward
+This ensures that when a row has fewer items than can fit, they center rather than hug the left edge -- identical behavior to how the Featured section works.
 
 ## Files Modified
 
-- **`src/pages/Index.tsx`** -- fix tile images to fill tiles; add `justify-center` to Featured carousel
-- **`src/pages/ProductDetail.tsx`** -- add `justify-center` to You May Also Like carousel
+- **`src/pages/Index.tsx`** -- convert category grid from CSS Grid to centered flex-wrap layout
+
