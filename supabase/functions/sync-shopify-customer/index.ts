@@ -10,6 +10,15 @@ const corsHeaders = {
 const SHOPIFY_STORE_DOMAIN = "ancientika-z1ujy.myshopify.com";
 const SHOPIFY_API_VERSION = "2025-07";
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
+const SHOPIFY_ADMIN_URL = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
+
+const CUSTOMER_LOOKUP_QUERY = `
+  query customerLookup($query: String!) {
+    customers(first: 1, query: $query) {
+      edges { node { id email } }
+    }
+  }
+`;
 
 const CUSTOMER_CREATE_MUTATION = `
   mutation customerCreate($input: CustomerCreateInput!) {
@@ -29,28 +38,42 @@ const CUSTOMER_CREATE_MUTATION = `
 
 async function shopifyStorefrontRequest(query: string, variables: Record<string, unknown> = {}) {
   const token = Deno.env.get("SHOPIFY_PRIVATE_STOREFRONT_TOKEN");
-  if (!token) {
-    throw new Error("Private storefront token not configured");
-  }
+  if (!token) throw new Error("Private storefront token not configured");
 
   const response = await fetch(SHOPIFY_STOREFRONT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Shopify-Storefront-Private-Token": token,
-    },
+    headers: { "Content-Type": "application/json", "Shopify-Storefront-Private-Token": token },
     body: JSON.stringify({ query, variables }),
+  });
+  if (!response.ok) throw new Error(`Shopify Storefront HTTP ${response.status}`);
+  const data = await response.json();
+  if (data.errors) throw new Error(`Storefront GQL: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`);
+  return data;
+}
+
+async function shopifyAdminLookupCustomer(email: string): Promise<string | null> {
+  const token = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
+  if (!token) {
+    console.warn("SHOPIFY_ACCESS_TOKEN not set — cannot lookup existing customers");
+    return null;
+  }
+
+  const response = await fetch(SHOPIFY_ADMIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
+    body: JSON.stringify({ query: CUSTOMER_LOOKUP_QUERY, variables: { query: `email:${email}` } }),
   });
 
   if (!response.ok) {
-    throw new Error(`Shopify API HTTP ${response.status}`);
+    console.error(`Admin API HTTP ${response.status}`);
+    return null;
   }
-
   const data = await response.json();
   if (data.errors) {
-    throw new Error(`Shopify GQL: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`);
+    console.error(`Admin API GQL: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`);
+    return null;
   }
-  return data;
+  return data?.data?.customers?.edges?.[0]?.node?.id || null;
 }
 
 Deno.serve(async (req) => {
@@ -140,14 +163,29 @@ Deno.serve(async (req) => {
     }
 
     if (takenError) {
-      // Customer already exists in Shopify but we can't retrieve their ID
-      // via Storefront API (requires Admin API). Store a marker.
+      // Customer exists — try Admin API to get their real Shopify GID
+      const shopifyGid = await shopifyAdminLookupCustomer(normalizedEmail);
+
+      if (shopifyGid) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({ shopify_customer_id: shopifyGid })
+          .eq("user_id", userId);
+
+        console.log(`Linked existing Shopify customer ${shopifyGid} for ${normalizedEmail}`);
+        return new Response(JSON.stringify({ synced: true, linked: true }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Admin API unavailable or failed — fall back to marker
       await supabaseAdmin
         .from("profiles")
         .update({ shopify_customer_id: "shopify_exists_unlinked" })
         .eq("user_id", userId);
 
-      console.log(`Shopify customer already exists for ${normalizedEmail} (unlinked)`);
+      console.log(`Shopify customer exists for ${normalizedEmail} (Admin lookup failed, unlinked)`);
       return new Response(JSON.stringify({ synced: true, existing_unlinked: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
