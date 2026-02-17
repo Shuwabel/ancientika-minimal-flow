@@ -211,39 +211,38 @@ export default function Index() {
         </motion.div>
       </section>
 
-      {/* Featured */}
-      <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
-
-      {/* Collections Grid - center aligned */}
-      <section className="relative py-20 overflow-hidden bg-card">
-        <div className="container relative">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8 text-center">Collections</h2>
+      {/* Shop by Category */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="text-base md:text-lg font-medium tracking-wide text-center mb-10">Shop by Category</h2>
           {isCollectionsLoading ? (
-            <div className="flex justify-center flex-wrap gap-3">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square w-[clamp(100px,15vw,160px)] rounded-sm" />
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="aspect-square w-full rounded-md" />
+                  <Skeleton className="h-3 w-3/4 mx-auto" />
+                </div>
               ))}
             </div>
           ) : shopifyCollections.length > 0 ? (
-            <div className="flex justify-center flex-wrap gap-2 md:gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
               {shopifyCollections.map((col, i) => (
                 <motion.div
                   key={col.node.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="w-[clamp(100px,15vw,160px)]"
+                  transition={{ delay: i * 0.06 }}
                 >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
-                    <div className="aspect-square rounded-sm overflow-hidden border border-border/50 bg-muted">
+                    <div className="aspect-square rounded-md overflow-hidden bg-muted/60 flex items-center justify-center transition-shadow duration-300 group-hover:shadow-md">
                       {col.node.image ? (
-                        <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-3/4 h-3/4 object-contain transition-transform duration-500 group-hover:scale-105" />
                       ) : (
-                        <div className="w-full h-full bg-card/80" />
+                        <div className="w-full h-full bg-muted/40" />
                       )}
                     </div>
-                    <p className="text-xs md:text-sm font-medium mt-1.5 text-center truncate">{col.node.title}</p>
+                    <p className="text-xs md:text-sm font-medium mt-2 text-center truncate">{col.node.title}</p>
                   </Link>
                 </motion.div>
               ))}
@@ -253,6 +252,9 @@ export default function Index() {
           )}
         </div>
       </section>
+
+      {/* Featured */}
+      <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
 
       {/* On Sale */}
       {!isLoading && discountedProducts.length > 0 && (
