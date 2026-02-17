@@ -78,10 +78,11 @@ export default function Header() {
             >
               <div className="container flex items-center gap-3 h-full">
                 <Search className="h-5 w-5 text-accent-foreground/70 shrink-0" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
+                  <input
+                   ref={searchInputRef}
+                   type="text"
+                   autoFocus
+                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, collections..."
                   className="flex-1 bg-transparent text-accent-foreground text-sm outline-none placeholder:text-accent-foreground/50"
