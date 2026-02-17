@@ -99,6 +99,11 @@ export default function Account() {
       }
 
       toast.success("Profile updated!");
+
+      // Fire-and-forget Shopify profile sync
+      supabase.functions.invoke("sync-shopify-customer", {
+        body: { userId: user.id, email: profile.email, syncProfile: true },
+      }).catch(() => {});
     } catch {
       toast.error("Failed to save profile");
     } finally {
