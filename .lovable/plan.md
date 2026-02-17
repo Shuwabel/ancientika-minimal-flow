@@ -1,38 +1,30 @@
 
 
-# Lock Page Scroll + Tap-Outside-to-Close for Search
+# Fix Search Input Auto-Focus
 
-## What Changes
+## Problem
 
-Two behaviors when the search is open:
+The search input does not auto-focus when the search icon is clicked. The root cause is `AnimatePresence mode="wait"` in the header — this mode waits for the exiting element (normal header) to finish its animation before mounting the entering element (search bar with input). By the time `requestAnimationFrame` fires, the input element hasn't been rendered yet, so `.focus()` does nothing.
 
-1. **Page scroll is locked** -- the page behind the search results cannot scroll while search is active
-2. **Tapping anywhere outside** the search bar and results panel closes the search
+## Solution
 
-## Implementation
+Add `autoFocus` attribute directly to the search `<input>` element. This is the simplest and most reliable fix — the browser will automatically focus the input as soon as it mounts, regardless of animation timing.
+
+## Technical Details
 
 ### File: `src/components/layout/Header.tsx`
 
-- Add a `useEffect` that sets `document.body.style.overflow = "hidden"` when `searchOpen` is true, and restores it to `""` on close/unmount
-- Add a `ref` to the `<header>` element and pass it to `PredictiveSearch` so click-outside logic can exclude both the header bar and results panel
+1. Add `autoFocus` prop to the search `<input>` on line 81-87
+2. The `requestAnimationFrame` call in `openSearch` can remain as a fallback, but `autoFocus` will handle the primary focus behavior
 
-### File: `src/components/PredictiveSearch.tsx`
-
-- Accept a new `headerRef` prop (`React.RefObject<HTMLElement>`)
-- Update the click-outside handler: close search only if the click target is outside BOTH `panelRef` (results dropdown) AND `headerRef` (the brown search bar)
-- This prevents the search bar itself from accidentally triggering a close when clicked
-
-### Technical Summary
-
-```text
-Header.tsx:
-  - headerRef = useRef() -> attached to <header>
-  - useEffect: searchOpen ? body.overflow = "hidden" : body.overflow = ""
-  - Pass headerRef to <PredictiveSearch headerRef={headerRef} />
-
-PredictiveSearch.tsx:
-  - New prop: headerRef: React.RefObject<HTMLElement>
-  - Click-outside check:
-    if (!panelRef.contains(target) && !headerRef.current?.contains(target)) -> onClose()
+Single-line change:
+```
+<input
+  ref={searchInputRef}
+  type="text"
+  autoFocus        // <-- add this
+  value={searchQuery}
+  ...
+/>
 ```
 
