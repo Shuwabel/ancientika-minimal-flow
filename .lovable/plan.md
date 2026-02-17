@@ -1,84 +1,62 @@
 
 
-# Sync Customer Details to Shopify
+# Fix: Address Sync Without Passwords
 
-## Problem
+## The Problem
 
-When creating a Shopify customer, only `email` and `password` are sent. Phone, name, and address from the user's profile are not included.
+The Storefront API's `customerAccessTokenCreate` requires `email + password`. Your site is passwordless (OTP only), so:
 
-## What the Storefront API supports
+- A random password is generated during customer creation but never stored
+- Address can only be synced in that exact same request (right after creation)
+- If the user adds address details later, there's no way to sync them
 
-The `CustomerCreateInput` accepts these fields:
-- `email` (already sent)
-- `password` (already sent)
-- `firstName`
-- `lastName`
-- `phone`
-- `acceptsMarketing`
+## Solution
 
-Addresses cannot be set during `customerCreate` -- they require a separate mutation (`customerAddressCreate`) with a customer access token after creation.
+Since we already generate the random password during `customerCreate`, we should **store it** securely so we can use it later for address syncs and future profile updates.
 
-## What's available in profiles table now
+### Changes
 
-- `phone` -- available, can be sent
-- `firstName` / `lastName` -- **not in profiles table yet** (need to add columns)
-- Address fields (`address_line1`, `city`, `state`, `postal_code`, `country`) -- available, but require post-creation flow
+#### 1. Add an encrypted column to profiles
 
-## Changes
+Add a `shopify_customer_token` column to store the random password. This is only used server-side in the edge function -- never exposed to the client.
 
-### 1. Add `first_name` and `last_name` columns to profiles table
-
-New migration to add these columns so users can store their name.
-
-### 2. Update Account page to include name fields
-
-Add First Name and Last Name inputs to the Contact section of the Account page.
-
-### 3. Update `sync-shopify-customer` edge function
-
-- Fetch the full profile (not just `shopify_customer_id`) to get phone, first_name, last_name
-- Pass `firstName`, `lastName`, `phone` to the `customerCreate` mutation input
-- After successful creation, use `customerAccessTokenCreate` to get an access token, then call `customerAddressCreate` to save the address if available
-
-### 4. Update `useAuth.ts` to pass profile data
-
-Instead of only sending `userId` and `email`, also send the profile data to the sync function so it has everything it needs.
-
-## Technical Details
-
-### Migration SQL
 ```sql
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS first_name text,
-  ADD COLUMN IF NOT EXISTS last_name text;
+  ADD COLUMN IF NOT EXISTS shopify_customer_token text;
 ```
 
-### Edge function changes (`sync-shopify-customer/index.ts`)
+The existing RLS policies already prevent users from reading other users' profiles, and the edge function uses the service role key, so this column is safe.
 
-- Fetch full profile: `select("shopify_customer_id, phone, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")`
-- Include in `customerCreate` input:
-  ```
-  firstName: profile.first_name || undefined
-  lastName: profile.last_name || undefined
-  phone: profile.phone || undefined
-  ```
-- Add `customerAccessTokenCreate` mutation to get access token after creation
-- Add `customerAddressCreate` mutation to save address using the access token
-- Add new GraphQL mutations for address creation
+#### 2. Update `sync-shopify-customer` edge function
 
-### Account page changes (`src/pages/Account.tsx`)
+- After generating the `randomPassword` and successfully creating the customer, **save it** to `shopify_customer_token` alongside the Shopify GID
+- When address data exists but wasn't synced during creation (e.g., user filled it in later), use the stored token to get a `customerAccessToken` and create the address
 
-- Add `first_name` and `last_name` to the Profile interface
-- Add two input fields in the Contact section
-- Include them in the save handler
+#### 3. Add a separate "sync profile updates" capability
 
-### Flow after changes
+Create logic so that when a user updates their profile (name, phone, address) on the Account page, the edge function can:
+1. Read the stored `shopify_customer_token`
+2. Call `customerAccessTokenCreate` with email + stored token
+3. Use `customerUpdate` and `customerAddressCreate`/`customerAddressUpdate` mutations to push changes to Shopify
 
-1. User signs up and fills in profile (name, phone, address)
-2. On login, `ensureShopifySync` fires
-3. Edge function fetches full profile
-4. Creates Shopify customer with name + phone
-5. Gets customer access token
-6. Creates customer address in Shopify
-7. Stores Shopify GID in profiles
+This means profile updates on the Account page can trigger a re-sync to Shopify with the latest data.
+
+### Flow After Changes
+
+1. User signs up -> `customerCreate` with random password -> password saved to `shopify_customer_token`
+2. User fills in name/phone/address on Account page
+3. On save, the edge function uses stored token to get access token
+4. Pushes name, phone, address updates to Shopify
+
+### Files Modified
+
+- **Migration**: Add `shopify_customer_token` column to `profiles`
+- **`supabase/functions/sync-shopify-customer/index.ts`**: Store the token on creation; add re-sync logic using stored token for subsequent updates
+- **`src/pages/Account.tsx`**: Trigger Shopify re-sync when profile is saved (fire-and-forget call)
+
+### Security Notes
+
+- The `shopify_customer_token` is only used server-side (edge function with service role key)
+- RLS ensures users can only see their own profile row, and the frontend query does not select this column
+- The token is a random UUID-based string, not a user-chosen password
 
