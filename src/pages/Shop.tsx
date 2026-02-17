@@ -1,7 +1,7 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, LayoutGrid, Grid2x2, Grid3x3, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, LayoutGrid, Grid2x2, Grid3x3, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCollections } from "@/lib/shopify";
@@ -46,9 +46,7 @@ export default function Shop() {
   const categoryParam = searchParams.get("category") || "all";
   const isMobile = useIsMobile();
 
-  const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchQuery = searchParams.get("q") || "";
   const [sortBy, setSortBy] = useState<SortOption>("featured");
   const [gridCols, setGridCols] = useState<GridCols>(isMobile ? 2 : 4);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -56,12 +54,6 @@ export default function Shop() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['shopify-products'],
@@ -110,7 +102,7 @@ export default function Shop() {
 
   const filtered = useMemo(() => {
     let result = products.filter((p) => {
-      if (search && !p.node.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (searchQuery && !p.node.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (categoryParam !== "all") {
         const productType = (p.node.productType || "").toLowerCase();
         if (productType !== categoryParam.toLowerCase()) return false;
@@ -142,7 +134,7 @@ export default function Shop() {
     }
 
     return result;
-  }, [products, search, categoryParam, sortBy, selectedSizes, inStockOnly, minPrice, maxPrice]);
+  }, [products, searchQuery, categoryParam, sortBy, selectedSizes, inStockOnly, minPrice, maxPrice]);
 
   const categoryTitle = categoryParam === "all"
     ? "All Products"
@@ -324,43 +316,6 @@ export default function Shop() {
           )}
 
           <div className="flex-1" />
-
-          {/* Search icon / expandable input */}
-          <AnimatePresence mode="wait">
-            {searchOpen ? (
-              <motion.div
-                key="search-input"
-                initial={{ width: 32 }}
-                animate={{ width: isMobile ? 140 : 200 }}
-                exit={{ width: 32 }}
-                className="relative shrink-0"
-              >
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..."
-                  className="w-full pl-8 pr-7 py-1.5 bg-card border border-border rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <button
-                  onClick={() => { setSearch(""); setSearchOpen(false); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                >
-                  <X className="h-3 w-3 text-muted-foreground" />
-                </button>
-              </motion.div>
-            ) : (
-              <button
-                key="search-icon"
-                onClick={() => setSearchOpen(true)}
-                className="h-8 w-8 flex items-center justify-center border border-border rounded-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-            )}
-          </AnimatePresence>
 
           {/* Grid toggle */}
           {!isMobile ? (
