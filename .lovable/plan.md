@@ -1,88 +1,56 @@
 
+# UI Fixes: Featured Carousel, Collections, "You May Also Like", and Mobile Quick-Add
 
-# Shop Page and Home Page Updates
-
-## Overview
-Five changes: (1) Add a liquid glass effect to the "Explore Collection" hero button, (2) completely remove the wishlist feature, (3) fix the mobile quick-add "+" button, (4) reduce featured carousel card sizes, and (5) make the collections grid more compact like the reference image.
-
----
-
-## 1. Liquid Glass "Explore Collection" Button
+## 1. Featured Carousel -- Smaller Cards + Remove Mobile Scroll Arrows
 
 **File: `src/pages/Index.tsx`**
 
-Replace the current solid `Button` for "Explore Collection" with a custom-styled button that has a frosted glass / liquid glass aesthetic:
-- Semi-transparent background with `bg-white/15` and `backdrop-blur-xl`
-- A subtle border with `border border-white/30`
-- Rounded corners, white text, and a soft shadow (`shadow-lg shadow-white/10`)
-- Keep the `ArrowRight` icon
+- Change card widths to show ~2.5 items on mobile: `w-[38vw]` mobile, `sm:w-[30vw]`, `md:w-[23vw]`, `lg:w-[22vw]`
+- Hide the left/right ChevronLeft/ChevronRight arrow buttons on mobile using `hidden md:flex` -- on mobile users just swipe naturally, no buttons needed
+- Reduce gap to `gap-2 md:gap-3`
 
----
+## 2. Collections Grid -- Responsive Columns
 
-## 2. Remove Wishlist Entirely
+**File: `src/pages/Index.tsx`**
 
-Remove all wishlist-related code from:
+Change from fixed `grid-cols-3` to responsive columns that use available space:
+- Mobile: `grid-cols-3` (compact)
+- md: `grid-cols-4`
+- lg: `grid-cols-5`
+- xl: `grid-cols-6`
 
-- **`src/components/ProductCard.tsx`**: Remove the `useWishlistStore` import, the `wishlisted` state, the mobile wishlist heart button (lines 62-70), and the desktop hover heart button (lines 84-89). The desktop hover overlay should now only show the ShoppingBag quick-add icon (show on hover always, not conditionally on `wishlisted`).
-- **`src/components/layout/Header.tsx`**: Remove the `useWishlistStore` import, `wishlistCount`, and the Heart icon link to `/wishlist` (lines 88-95).
-- **`src/App.tsx`**: Remove the Wishlist import and the `/wishlist` route.
-- **`src/pages/Wishlist.tsx`**: Delete this file.
-- **`src/stores/wishlistStore.ts`**: Delete this file.
+This ensures larger screens fill the space instead of showing only 3 wide columns.
 
----
+## 3. "You May Also Like" Section -- Horizontal Carousel
 
-## 3. Fix Mobile Quick-Add "+" Button
+**File: `src/pages/ProductDetail.tsx`**
+
+Replace the current `grid grid-cols-2 md:grid-cols-4` layout with a horizontal scrollable carousel matching the Featured section style:
+- Use a scrollable `flex` container with `overflow-x-auto snap-x snap-mandatory no-scrollbar`
+- Card widths: `w-[38vw]` mobile (shows ~2.5), responsive scaling for larger screens
+- No scroll arrows on mobile, optional hover arrows on desktop
+- Keep the same `scroll-smooth` and `snap-start` behavior
+
+## 4. Fix Mobile Quick-Add "+" Button Navigation Issue
 
 **File: `src/components/MobileQuickAdd.tsx`**
 
-The issue is that the `DialogTrigger` button's `onClick` calls `e.preventDefault()` and `e.stopPropagation()` but doesn't explicitly open the dialog. The `Dialog` is controlled (`open={open}`), but the trigger's `preventDefault` may be blocking the Radix trigger from toggling `open`. Fix by removing `e.preventDefault()` from the trigger's onClick (keep `e.stopPropagation()` so the parent Link doesn't navigate), or explicitly set `setOpen(true)` in the onClick.
+The problem: clicking the "+" button opens the dialog but ALSO triggers the parent `<Link>` navigation (loading the product page). The current `e.stopPropagation()` alone isn't enough because the `<Link>` is an ancestor, not a sibling.
 
----
+Fix: Add `e.preventDefault()` back alongside `e.stopPropagation()` on the trigger button. The key insight from the knowledge base is that both are needed -- `stopPropagation` prevents bubbling and `preventDefault` prevents the `<Link>` default navigation. The previous removal of `preventDefault` is what caused this regression.
 
-## 4. Reduce Featured Carousel Card Sizes
-
-**File: `src/pages/Index.tsx`**
-
-Current card widths are `w-[70vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw]` which are too large.
-
-Per the reference image, on mobile you should see ~2.5 cards. On desktop, all 4 should be visible without scrolling.
-
-New widths:
-- Mobile: `w-[40vw]` (shows ~2.5 cards)
-- sm: `w-[35vw]`
-- md: `w-[23vw]`
-- lg: `w-[22vw]`
-
-Also reduce the gap from `gap-4` to `gap-3` for tighter spacing matching the reference.
-
----
-
-## 5. Compact Collections Grid
-
-**File: `src/pages/Index.tsx`**
-
-Currently the collections grid uses `aspect-[3/4]` (tall portrait) with 2 columns on mobile and 4 on desktop.
-
-Per the reference image (3-column grid with square-ish compact tiles showing product image + title below):
-
-- Change to a 3-column grid on all viewports: `grid-cols-3`
-- Change aspect ratio to `aspect-square` for compact tiles
-- Use `object-contain` and a light/neutral background so products are shown fully (like the reference)
-- Move the title below the image tile (outside the overlay) instead of as an overlay on the image
-- Remove the gradient overlay and description text
-- Add small gap between tiles: `gap-2 md:gap-3`
-
----
+```tsx
+onClick={(e) => { 
+  e.preventDefault(); 
+  e.stopPropagation(); 
+  setOpen(true); 
+}}
+```
 
 ## Technical Summary
 
-| File | Action |
-|------|--------|
-| `src/pages/Index.tsx` | Glass button, smaller carousel cards, compact collection grid |
-| `src/components/ProductCard.tsx` | Remove all wishlist code, keep quick-add only |
-| `src/components/layout/Header.tsx` | Remove wishlist icon from header |
-| `src/App.tsx` | Remove wishlist route and import |
-| `src/pages/Wishlist.tsx` | Delete file |
-| `src/stores/wishlistStore.ts` | Delete file |
-| `src/components/MobileQuickAdd.tsx` | Fix onClick handler for dialog trigger |
-
+| File | Changes |
+|------|---------|
+| `src/pages/Index.tsx` | Smaller featured cards (`w-[38vw]`), hide scroll arrows on mobile, responsive collection grid columns |
+| `src/pages/ProductDetail.tsx` | Convert "You May Also Like" from grid to horizontal swipeable carousel |
+| `src/components/MobileQuickAdd.tsx` | Add `e.preventDefault()` back to fix navigation issue on "+" click |
