@@ -11,13 +11,14 @@ interface PredictiveSearchProps {
   query: string;
   onClose: () => void;
   onNavigate: (path: string) => void;
+  headerRef?: React.RefObject<HTMLElement>;
 }
 
 function normalizeArray<T>(val: unknown): T[] {
   return Array.isArray(val) ? val : [];
 }
 
-export default function PredictiveSearch({ open, query, onClose, onNavigate }: PredictiveSearchProps) {
+export default function PredictiveSearch({ open, query, onClose, onNavigate, headerRef }: PredictiveSearchProps) {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [collections, setCollections] = useState<ShopifyCollection[]>([]);
   const [fallbackCollections, setFallbackCollections] = useState<ShopifyCollection[]>([]);
@@ -39,7 +40,11 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate }: P
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        panelRef.current && !panelRef.current.contains(target) &&
+        (!headerRef?.current || !headerRef.current.contains(target))
+      ) {
         onClose();
       }
     };
