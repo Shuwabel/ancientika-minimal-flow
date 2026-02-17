@@ -25,18 +25,23 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
 
   return (
     <section className="py-16 md:py-20">
-      <div className="container flex items-baseline justify-between mb-8">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">Featured</h2>
+      <div className="flex items-baseline justify-between mb-8 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+        <h2
+          className="uppercase font-medium tracking-[0.15em]"
+          style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
+        >
+          Featured
+        </h2>
         <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
           View all
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="container grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="flex gap-4 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="aspect-square w-full rounded-sm" />
+            <div key={i} className="space-y-3 shrink-0" style={{ width: "clamp(160px, 22vw, 280px)" }}>
+              <Skeleton className="aspect-[4/5] w-full rounded-sm" />
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
             </div>
@@ -46,14 +51,14 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
         <div className="relative group">
           <button
             onClick={() => scroll("left")}
-            className="absolute left-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute left-2 top-[40%] -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="absolute right-2 top-1/3 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-2 top-[40%] -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/90 border border-border shadow-md hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Scroll right"
           >
             <ChevronRight className="h-5 w-5" />
@@ -61,17 +66,21 @@ function FeaturedCarousel({ products, isLoading }: { products: any[]; isLoading:
 
           <div
             ref={scrollRef}
-            className="flex gap-2 md:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory mx-4 md:mx-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4 no-scrollbar"
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 no-scrollbar px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]"
           >
             {products.map((product) => (
-              <div key={product.node.id} className="snap-start shrink-0 w-[38vw] sm:w-[30vw] md:w-[23vw] lg:w-[22vw]">
-                <ProductCard product={product} />
+              <div
+                key={product.node.id}
+                className="snap-start shrink-0 grow-0"
+                style={{ width: "clamp(160px, 22vw, 280px)" }}
+              >
+                <ProductCard product={product} aspectRatio="4/5" />
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <p className="container text-center text-muted-foreground text-sm py-10">No products yet</p>
+        <p className="text-center text-muted-foreground text-sm py-10 px-4">No products yet</p>
       )}
     </section>
   );

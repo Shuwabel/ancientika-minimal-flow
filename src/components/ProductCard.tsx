@@ -8,7 +8,7 @@ import MobileQuickAdd from "@/components/MobileQuickAdd";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 
-export default function ProductCard({ product }: { product: ShopifyProduct }) {
+export default function ProductCard({ product, aspectRatio }: { product: ShopifyProduct; aspectRatio?: string }) {
   const [hovered, setHovered] = useState(false);
   const isMobile = useIsMobile();
   const node = product.node;
@@ -30,12 +30,13 @@ export default function ProductCard({ product }: { product: ShopifyProduct }) {
       onMouseLeave={() => !isMobile && setHovered(false)}
     >
       <Link to={`/product/${node.handle}`} className="block">
-        <div className="aspect-square bg-muted rounded-sm overflow-hidden relative">
+        <div className={`${aspectRatio ? '' : 'aspect-square'} bg-muted rounded-sm overflow-hidden relative`} style={aspectRatio ? { aspectRatio } : undefined}>
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={node.images.edges[0]?.node.altText || node.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No image</div>
