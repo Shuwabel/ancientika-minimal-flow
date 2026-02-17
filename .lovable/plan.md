@@ -1,62 +1,36 @@
 
-# Plan: Remove All Authentication and User Management
 
-## Summary
+# Fix: Center-Align Content, Not Images
 
-Strip out every authentication, user profile, and account management feature from the frontend. The **only user-facing feature that remains** is the AI "Find My Size" recommender, which already persists its data in the browser's local storage (no account needed).
+## Problem
 
-## What Gets Removed
+1. **Shop by Category**: Images are shrunk to 75% and centered inside tiles (`w-3/4 h-3/4 object-contain`). They should fill the entire tile (`w-full h-full object-cover`). The grid container itself is already centered -- that part is fine.
 
-### Pages
-- **`src/pages/Auth.tsx`** -- the entire sign-up / sign-in page (delete file)
-- **`src/pages/Account.tsx`** -- the entire profile/account page (delete file)
+2. **Featured carousel**: Items are left-aligned using `flex` with left padding. When there are fewer items than fill the row, empty space appears on the right.
 
-### Components
-- **`src/components/layout/UserMenu.tsx`** -- the user/profile icon in the header (delete file)
-- **`src/components/ProfileSetupForm.tsx`** -- the multi-step onboarding form (delete file)
-- **`src/components/CountryCodeSelect.tsx`** -- only used by auth/profile forms (delete file)
+3. **You May Also Like carousel** (ProductDetail page): Same left-alignment issue.
 
-### Hooks
-- **`src/hooks/useAuth.ts`** -- the authentication hook (delete file)
+## Changes
 
-### Data
-- **`src/lib/country-codes.ts`** -- only used by the auth/profile forms (delete file)
+### 1. `src/pages/Index.tsx` -- Shop by Category tiles
 
-### Header Update
-- **`src/components/layout/Header.tsx`** -- remove the `UserMenu` import and its usage from the icon row (line 163). The header keeps Search and Cart icons only.
+Revert the image sizing back to full-tile coverage:
+- Change `w-3/4 h-3/4 object-contain` to `w-full h-full object-cover`
+- Remove the `flex items-center justify-center` from the tile wrapper (no longer needed when image fills the tile)
 
-### Router Update
-- **`src/App.tsx`** -- remove the `/auth` and `/account` routes, and remove their imports
+### 2. `src/pages/Index.tsx` -- FeaturedCarousel
 
-## What Stays
+Change the flex container from left-aligned to center-aligned:
+- Add `justify-center` to the flex container so items spread from center
+- Keep `overflow-x-auto` so it still scrolls when items exceed viewport width
+- This means when there are few items, they sit centered; when many, they scroll naturally
 
-- **Size Recommender** (`SizeRecommenderModal`, `SizeGuideModal`, `sizeStore`, `size-data`) -- fully intact, unchanged
-- Size data is already persisted in `localStorage` via Zustand's `persist` middleware, so returning customers will see their saved size recommendations without needing an account
-- **Size Guide page** (`/size-guide`) -- stays as-is
-- All shopping features (cart, products, collections, Shopify integration)
-- Contact page, About page, Product Care page
+### 3. `src/pages/ProductDetail.tsx` -- You May Also Like
 
-## Edge Functions (no changes needed)
+Same fix as Featured:
+- Add `justify-center` to the flex container so items populate from center outward
 
-The backend edge functions (`request-otp`, `verify-otp`, `sync-shopify-customer`, etc.) and database tables (`profiles`, `email_otps`) will remain deployed but simply won't be called from the frontend anymore. They can be cleaned up separately later if desired.
+## Files Modified
 
-## Technical Details
-
-### Files Deleted (7 files)
-1. `src/pages/Auth.tsx`
-2. `src/pages/Account.tsx`
-3. `src/components/layout/UserMenu.tsx`
-4. `src/components/ProfileSetupForm.tsx`
-5. `src/components/CountryCodeSelect.tsx`
-6. `src/hooks/useAuth.ts`
-7. `src/lib/country-codes.ts`
-
-### Files Modified (2 files)
-
-1. **`src/App.tsx`**
-   - Remove imports: `Auth`, `Account`
-   - Remove routes: `/auth`, `/account`
-
-2. **`src/components/layout/Header.tsx`**
-   - Remove `import UserMenu` (line 3)
-   - Remove `<UserMenu />` from the icons section (line 163)
+- **`src/pages/Index.tsx`** -- fix tile images to fill tiles; add `justify-center` to Featured carousel
+- **`src/pages/ProductDetail.tsx`** -- add `justify-center` to You May Also Like carousel
