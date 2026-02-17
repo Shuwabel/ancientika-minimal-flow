@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const SYNC_URL = `https://${PROJECT_ID}.supabase.co/functions/v1/sync-shopify-customer`;
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
@@ -88,30 +89,47 @@ export default function Auth() {
     }
   };
 
+  // --- Shopify customer sync (fire-and-forget) ---
+  const syncShopifyCustomer = async (userId: string, email: string) => {
+    try {
+      await fetch(SYNC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, email }),
+      });
+    } catch {
+      // Never block auth flow
+    }
+  };
+
   // --- Verify OTP handler ---
   const handleVerify = async () => {
     if (otpCode.length !== 6) return;
     setLoading(true);
     try {
       if (method === "email") {
-        // Custom verify via edge function
         const data = await handleEmailOtpVerify(identifier.trim(), otpCode);
-        // Use the returned token_hash to complete Supabase auth session
-        const { error } = await supabase.auth.verifyOtp({
+        const { error, data: sessionData } = await supabase.auth.verifyOtp({
           token_hash: data.token_hash,
           type: data.type || "magiclink",
         });
         if (error) throw error;
         toast.success("Signed in successfully!");
+        // Fire-and-forget Shopify sync
+        if (sessionData?.user) {
+          syncShopifyCustomer(sessionData.user.id, identifier.trim());
+        }
       } else {
-        // Phone OTP via Supabase
-        const { error } = await supabase.auth.verifyOtp({
+        const { error, data: sessionData } = await supabase.auth.verifyOtp({
           phone: identifier.trim(),
           token: otpCode,
           type: "sms" as const,
         });
         if (error) throw error;
         toast.success("Signed in successfully!");
+        if (sessionData?.user) {
+          syncShopifyCustomer(sessionData.user.id, sessionData.user.email || identifier.trim());
+        }
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid code");
