@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import mochaLogo from "@/assets/Ancientika_logo_mocha_brown.png";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState } from "react";
+import PredictiveSearch from "@/components/PredictiveSearch";
 
 export default function Header() {
   const totalItems = useCartStore(s => s.items.reduce((sum, i) => sum + i.quantity, 0));
@@ -17,6 +18,7 @@ export default function Header() {
   const isHomePage = location.pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: collections = [] } = useQuery({
     queryKey: ['shopify-collections'],
@@ -80,9 +82,9 @@ export default function Header() {
 
         {/* Right: Icons */}
         <div className="flex items-center gap-3">
-          <Link to="/shop" className="p-2 hover:text-accent transition-colors" aria-label="Search">
+          <button onClick={() => setSearchOpen(true)} className="p-2 hover:text-accent transition-colors" aria-label="Search">
             <Search className="h-5 w-5" />
-          </Link>
+          </button>
           <UserMenu />
           <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
             <ShoppingBag className="h-5 w-5" />
@@ -94,6 +96,7 @@ export default function Header() {
           </button>
         </div>
       </div>
+      <PredictiveSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }
