@@ -5,7 +5,6 @@ import { Mail, Phone, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -24,7 +23,7 @@ export default function Auth() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [step, setStep] = useState<Step>("form");
   const [identifier, setIdentifier] = useState("");
@@ -147,7 +146,7 @@ export default function Auth() {
       } else {
         // Sign in: fire-and-forget sync and navigate
         syncShopifyCustomer(sessionUserId, sessionEmail);
-        navigate("/account", { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid code");
@@ -218,16 +217,7 @@ export default function Auth() {
       ) : (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* Sign In / Sign Up top-level tabs */}
-          {step === "form" && (
-            <div className="mb-6">
-              <Tabs value={authMode} onValueChange={(v) => { setAuthMode(v as AuthMode); setIdentifier(""); setPhoneNumber(""); }}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="signin" className="flex-1">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup" className="flex-1">Sign Up</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          )}
+          {/* No tabs - just heading changes based on authMode */}
 
           <h1 className="text-2xl font-light mb-2 text-center">
             {step === "otp" ? "Verify Code" : authMode === "signin" ? "Welcome Back" : "Create Account"}
@@ -269,17 +259,23 @@ export default function Auth() {
                 <Separator className="flex-1" />
               </div>
 
-              {/* Email / Phone tabs */}
-              <Tabs value={method} onValueChange={(v) => { setMethod(v as "email" | "phone"); setIdentifier(""); setPhoneNumber(""); }}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="email" className="flex-1 gap-2">
-                    <Mail className="h-4 w-4" /> Email
-                  </TabsTrigger>
-                  <TabsTrigger value="phone" className="flex-1 gap-2">
-                    <Phone className="h-4 w-4" /> Phone
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              {/* Email / Phone toggle */}
+              <div className="flex w-full rounded-md border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => { setMethod("email"); setIdentifier(""); setPhoneNumber(""); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm transition-colors ${method === "email" ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent"}`}
+                >
+                  <Mail className="h-4 w-4" /> Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMethod("phone"); setIdentifier(""); setPhoneNumber(""); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm transition-colors ${method === "phone" ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent"}`}
+                >
+                  <Phone className="h-4 w-4" /> Phone
+                </button>
+              </div>
 
               <form onSubmit={handleSendCode} className="space-y-4">
                 {method === "email" ? (
