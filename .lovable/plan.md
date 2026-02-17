@@ -1,47 +1,22 @@
 
 
-# Plan: Align Account Page with Sign Up + Simplify Auth Flow
+# Plan: Default to Nigeria (+234) for Country Code and Country Dropdown
 
 ## Changes
 
-### 1. Auth Page (`src/pages/Auth.tsx`) - Remove Tabs, Default to Sign Up
+### 1. Sign Up Form (`src/components/ProfileSetupForm.tsx`)
+- Change `phoneDial` default from `"+1"` to `"+234"` (Nigeria)
+- Change `country` default from `""` to `"Nigeria"`
 
-- Remove the `TabsList` with "Sign In" / "Sign Up" tabs at the top
-- Default view is **Sign Up** with heading "Create Account"
-- Below the form, show: "Already have an account? **Sign in**" as a text link
-- Clicking "Sign in" switches to the Sign In flow (heading "Welcome Back"), which shows "Don't have an account? **Sign up**" below
-- **Sign In flow**: After OTP verification, navigate to **`/`** (homepage) instead of `/account`
+### 2. Account Page (`src/pages/Account.tsx`)
+- Change `phoneDial` fallback default from `"+1"` to `"+234"` (used when no phone is saved or no dial code match is found)
+- Ensure the country dropdown defaults to "Nigeria" when no country is saved
 
-### 2. Account Page (`src/pages/Account.tsx`) - Add Country Code Selector + Country Dropdown
-
-Currently the Account page uses plain text inputs for Phone and Country. These need to match the Sign Up form:
-
-- **Phone field**: Replace the plain `<Input>` with a `CountryCodeSelect` + phone number input (same layout as the Sign Up form). On load, parse the existing phone string (e.g., `+2348166084708`) to extract the dial code and number separately. On save, combine them back into a single string.
-
-- **Country field**: Replace the plain `<Input>` with the same searchable country dropdown used in `ProfileSetupForm.tsx` (flag + country name, with search). This ensures the country value is always a valid name from the list, which the Shopify sync can then map to an ISO code.
+### 3. Country Codes List (`src/lib/country-codes.ts`)
+- Move Nigeria to the **top** of the `countryCodes` array so it appears first in all dropdowns (country code selector and country picker)
+- All other countries remain alphabetically sorted after Nigeria
 
 ### Technical Details
 
-#### Files Modified
-
-1. **`src/pages/Auth.tsx`**
-   - Remove `Tabs`/`TabsList`/`TabsTrigger` for sign-in/sign-up toggle
-   - Replace with `authMode` state defaulting to `"signup"`
-   - Render inline text links to toggle between modes
-   - Change sign-in post-verify navigation from `/account` to `/`
-
-2. **`src/pages/Account.tsx`**
-   - Import `CountryCodeSelect` and `countryCodes`
-   - Add state for `phoneDial` and `phoneNumber` (parsed from `profile.phone` on load)
-   - Replace phone `<Input>` with `CountryCodeSelect` + `<Input>` combo
-   - Add state for `countryDropdownOpen` and `countrySearch`
-   - Replace country `<Input>` with the same searchable dropdown pattern from `ProfileSetupForm.tsx`
-   - On save, recombine phone as `${phoneDial}${phoneNumber}` before sending to the database
-
-#### Phone Parsing Logic
-
-When loading profile data, extract the dial code from the stored phone string:
-- Match against known country dial codes from `countryCodes` list (longest match first)
-- Set `phoneDial` to the matched code, `phoneNumber` to the remainder
-- Fallback: default dial to `+1`, full string as number
+These are small default-value changes across 3 files -- no logic or layout changes needed.
 
