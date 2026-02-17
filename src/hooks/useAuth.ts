@@ -13,7 +13,7 @@ async function ensureShopifySync(user: User) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (profile?.shopify_customer_id) return; // Already synced
+    if (profile?.shopify_customer_id?.startsWith("gid://")) return; // Already synced with real GID
 
     await fetch(SYNC_URL, {
       method: "POST",

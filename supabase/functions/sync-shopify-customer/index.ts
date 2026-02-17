@@ -10,15 +10,6 @@ const corsHeaders = {
 const SHOPIFY_STORE_DOMAIN = "ancientika-z1ujy.myshopify.com";
 const SHOPIFY_API_VERSION = "2025-07";
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
-const SHOPIFY_ADMIN_URL = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
-
-const CUSTOMER_LOOKUP_QUERY = `
-  query customerLookup($query: String!) {
-    customers(first: 1, query: $query) {
-      edges { node { id email } }
-    }
-  }
-`;
 
 const CUSTOMER_CREATE_MUTATION = `
   mutation customerCreate($input: CustomerCreateInput!) {
@@ -51,31 +42,6 @@ async function shopifyStorefrontRequest(query: string, variables: Record<string,
   return data;
 }
 
-async function shopifyAdminLookupCustomer(email: string): Promise<string | null> {
-  const token = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
-  if (!token) {
-    console.warn("SHOPIFY_ACCESS_TOKEN not set — cannot lookup existing customers");
-    return null;
-  }
-
-  const response = await fetch(SHOPIFY_ADMIN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
-    body: JSON.stringify({ query: CUSTOMER_LOOKUP_QUERY, variables: { query: `email:${email}` } }),
-  });
-
-  if (!response.ok) {
-    console.error(`Admin API HTTP ${response.status}`);
-    return null;
-  }
-  const data = await response.json();
-  if (data.errors) {
-    console.error(`Admin API GQL: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`);
-    return null;
-  }
-  return data?.data?.customers?.edges?.[0]?.node?.id || null;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -105,7 +71,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check if profile already has a shopify_customer_id
+    // Check if profile already has a valid Shopify GID
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("shopify_customer_id")
@@ -120,8 +86,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Already synced — stop
-    if (profile?.shopify_customer_id) {
+    // Only skip if we have a real Shopify GID (retry "shopify_exists_unlinked" users)
+    if (profile?.shopify_customer_id?.startsWith("gid://")) {
       return new Response(JSON.stringify({ synced: true, existing: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -129,7 +95,6 @@ Deno.serve(async (req) => {
     }
 
     // Try to create the customer in Shopify
-    // If the customer already exists, Shopify returns a TAKEN error
     const randomPassword = crypto.randomUUID().slice(0, 20) + "A1!";
 
     const data = await shopifyStorefrontRequest(CUSTOMER_CREATE_MUTATION, {
@@ -163,29 +128,14 @@ Deno.serve(async (req) => {
     }
 
     if (takenError) {
-      // Customer exists — try Admin API to get their real Shopify GID
-      const shopifyGid = await shopifyAdminLookupCustomer(normalizedEmail);
-
-      if (shopifyGid) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({ shopify_customer_id: shopifyGid })
-          .eq("user_id", userId);
-
-        console.log(`Linked existing Shopify customer ${shopifyGid} for ${normalizedEmail}`);
-        return new Response(JSON.stringify({ synced: true, linked: true }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Admin API unavailable or failed — fall back to marker
+      // Customer already exists in Shopify — mark as unlinked
+      // (Admin API lacks read_customers scope, so we can't look up the GID)
       await supabaseAdmin
         .from("profiles")
         .update({ shopify_customer_id: "shopify_exists_unlinked" })
         .eq("user_id", userId);
 
-      console.log(`Shopify customer exists for ${normalizedEmail} (Admin lookup failed, unlinked)`);
+      console.log(`Shopify customer exists for ${normalizedEmail} (marked unlinked)`);
       return new Response(JSON.stringify({ synced: true, existing_unlinked: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -201,7 +151,6 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("sync-shopify-customer error:", err);
-    // Never block auth flow — return success:false but 200
     return new Response(JSON.stringify({ synced: false, reason: "internal_error" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
