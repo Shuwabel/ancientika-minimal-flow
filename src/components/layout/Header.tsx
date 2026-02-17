@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Menu, ChevronDown, X } from "lucide-react";
-import UserMenu from "@/components/layout/UserMenu";
+
 import { useCartStore } from "@/stores/cartStore";
 import { fetchCollections } from "@/lib/shopify";
 import { useQuery } from "@tanstack/react-query";
@@ -160,7 +160,7 @@ export default function Header() {
                   <button onClick={openSearch} className="p-2 hover:text-accent transition-colors" aria-label="Search">
                     <Search className="h-5 w-5" />
                   </button>
-                  <UserMenu />
+                  
                   <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
                     <ShoppingBag className="h-5 w-5" />
                     {totalItems > 0 && (

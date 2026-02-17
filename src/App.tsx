@@ -12,8 +12,6 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import SizeGuide from "./pages/SizeGuide";
 import ProductCare from "./pages/ProductCare";
-import Auth from "./pages/Auth";
-import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,8 +29,6 @@ function AppContent() {
         <Route path="/size-guide" element={<SizeGuide />} />
         <Route path="/product-care" element={<ProductCare />} />
         
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/account" element={<Account />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
