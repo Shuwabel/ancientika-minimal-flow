@@ -36,21 +36,7 @@ export default function PredictiveSearch({ open, query, onClose, onNavigate, hea
     }
   }, [open]);
 
-  // Click outside to close
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        panelRef.current && !panelRef.current.contains(target) &&
-        (!headerRef?.current || !headerRef.current.contains(target))
-      ) {
-        onClose();
-      }
-    };
-    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 100);
-    return () => { clearTimeout(timer); document.removeEventListener("mousedown", handler); };
-  }, [open, onClose]);
+  // Click-outside is now handled by the overlay in Header.tsx
 
   // Load fallback collections once
   useEffect(() => {

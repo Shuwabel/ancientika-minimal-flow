@@ -61,115 +61,132 @@ export default function Header() {
   }, [searchOpen]);
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-40 border-b border-border">
-      <AnimatePresence mode="wait">
-        {searchOpen ? (
-          <motion.div
-            key="search-bar"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="bg-accent h-16 flex items-center"
-          >
-            <div className="container flex items-center gap-3 h-full">
-              <Search className="h-5 w-5 text-accent-foreground/70 shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products, collections..."
-                className="flex-1 bg-transparent text-accent-foreground text-sm outline-none placeholder:text-accent-foreground/50"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && searchQuery.length >= 2) {
-                    closeSearch();
-                    navigate(`/shop?q=${encodeURIComponent(searchQuery)}`);
-                  }
-                }}
-              />
-              <button onClick={closeSearch} className="p-2 text-accent-foreground/70 hover:text-accent-foreground transition-colors" aria-label="Close search">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="normal-header"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 h-16"
-          >
-            <div className="container flex h-16 items-center justify-between">
-              {/* Left: Hamburger + Logo */}
-              <div className="flex items-center gap-2">
-                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                  <SheetTrigger asChild>
-                    <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
-                      <Menu className="h-5 w-5" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-56">
-                    <SheetTitle className="sr-only">Navigation</SheetTitle>
-                    <nav className="flex flex-col gap-1 mt-8">
-                      {!isHomePage && (
-                        <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                          Home
-                        </button>
-                      )}
-                      <div>
-                        <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                          Shop
-                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
-                        </button>
-                        {categoriesExpanded && (
-                          <div className="flex flex-col pl-4">
-                            <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
-                            {collections.map((col) => (
-                              <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
-                                {col.node.title}
-                              </button>
-                            ))}
-                          </div>
+    <>
+      <header ref={headerRef} className="sticky top-0 z-40 border-b border-border">
+        <AnimatePresence mode="wait">
+          {searchOpen ? (
+            <motion.div
+              key="search-bar"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="bg-accent h-16 flex items-center relative z-50"
+            >
+              <div className="container flex items-center gap-3 h-full">
+                <Search className="h-5 w-5 text-accent-foreground/70 shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products, collections..."
+                  className="flex-1 bg-transparent text-accent-foreground text-sm outline-none placeholder:text-accent-foreground/50"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && searchQuery.length >= 2) {
+                      closeSearch();
+                      navigate(`/shop?q=${encodeURIComponent(searchQuery)}`);
+                    }
+                  }}
+                />
+                <button onClick={closeSearch} className="p-2 text-accent-foreground/70 hover:text-accent-foreground transition-colors" aria-label="Close search">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="normal-header"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 h-16"
+            >
+              <div className="container flex h-16 items-center justify-between">
+                {/* Left: Hamburger + Logo */}
+                <div className="flex items-center gap-2">
+                  <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                    <SheetTrigger asChild>
+                      <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
+                        <Menu className="h-5 w-5" />
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-56">
+                      <SheetTitle className="sr-only">Navigation</SheetTitle>
+                      <nav className="flex flex-col gap-1 mt-8">
+                        {!isHomePage && (
+                          <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                            Home
+                          </button>
                         )}
-                      </div>
-                      <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                        About
-                      </button>
-                      <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
-                        Contact
-                      </button>
-                    </nav>
-                  </SheetContent>
-                </Sheet>
+                        <div>
+                          <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                            Shop
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                          {categoriesExpanded && (
+                            <div className="flex flex-col pl-4">
+                              <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
+                              {collections.map((col) => (
+                                <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
+                                  {col.node.title}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                          About
+                        </button>
+                        <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                          Contact
+                        </button>
+                      </nav>
+                    </SheetContent>
+                  </Sheet>
 
-                <Link to="/">
-                  <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
-                </Link>
-              </div>
+                  <Link to="/">
+                    <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
+                  </Link>
+                </div>
 
-              {/* Right: Icons */}
-              <div className="flex items-center gap-3">
-                <button onClick={openSearch} className="p-2 hover:text-accent transition-colors" aria-label="Search">
-                  <Search className="h-5 w-5" />
-                </button>
-                <UserMenu />
-                <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
-                  <ShoppingBag className="h-5 w-5" />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-medium">
-                      {totalItems}
-                    </span>
-                  )}
-                </button>
+                {/* Right: Icons */}
+                <div className="flex items-center gap-3">
+                  <button onClick={openSearch} className="p-2 hover:text-accent transition-colors" aria-label="Search">
+                    <Search className="h-5 w-5" />
+                  </button>
+                  <UserMenu />
+                  <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
+                    <ShoppingBag className="h-5 w-5" />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-medium">
+                        {totalItems}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <PredictiveSearch open={searchOpen} query={searchQuery} onClose={closeSearch} onNavigate={(path) => { closeSearch(); navigate(path); }} headerRef={headerRef} />
+      </header>
+
+      {/* Dim overlay when search is open */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-30 bg-black/50"
+            onClick={closeSearch}
+            aria-hidden="true"
+          />
         )}
       </AnimatePresence>
-      <PredictiveSearch open={searchOpen} query={searchQuery} onClose={closeSearch} onNavigate={(path) => { closeSearch(); navigate(path); }} headerRef={headerRef} />
-    </header>
+    </>
   );
 }
