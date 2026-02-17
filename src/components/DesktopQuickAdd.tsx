@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Loader2, Zap } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
@@ -26,12 +26,13 @@ function sortSizes(values: string[]): string[] {
   });
 }
 
-interface MobileQuickAddProps {
+interface DesktopQuickAddProps {
   product: ShopifyProduct;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
-  const [open, setOpen] = useState(false);
+export default function DesktopQuickAdd({ product, open, onOpenChange }: DesktopQuickAddProps) {
   const { addItem, isLoading } = useCartStore();
   const { getRecommendation } = useSizeStore();
   const [buyingNow, setBuyingNow] = useState(false);
@@ -70,7 +71,7 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
       quantity: 1,
       selectedOptions: variant.selectedOptions,
     });
-    setOpen(false);
+    onOpenChange(false);
   };
 
   const handleBuyNow = async () => {
@@ -87,7 +88,7 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
         selectedOptions: variant.selectedOptions,
       });
       if (checkoutUrl) window.open(checkoutUrl, '_blank');
-      setOpen(false);
+      onOpenChange(false);
     } finally {
       setBuyingNow(false);
     }
@@ -102,16 +103,8 @@ export default function MobileQuickAdd({ product }: MobileQuickAddProps) {
   const currencySymbol = currency === 'USD' ? '$' : currency === 'NGN' ? '₦' : currency;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-          className="absolute top-2 right-2 z-10 h-7 w-7 flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <ShoppingBag className="h-4 w-4 text-foreground fill-foreground" />
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-[90vw] rounded-lg p-5">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm rounded-lg p-5">
         <DialogHeader>
           <DialogTitle className="text-sm font-medium text-left">{node.title}</DialogTitle>
           <p className="text-sm text-muted-foreground text-left">{currencySymbol}{price.toFixed(2)}</p>
