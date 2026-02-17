@@ -1,22 +1,43 @@
 
 
-# Plan: Default to Nigeria (+234) for Country Code and Country Dropdown
+# Plan: Fix Account Page for Unauthenticated Users
 
-## Changes
+## Problem
 
-### 1. Sign Up Form (`src/components/ProfileSetupForm.tsx`)
-- Change `phoneDial` default from `"+1"` to `"+234"` (Nigeria)
-- Change `country` default from `""` to `"Nigeria"`
+When a user is not logged in and clicks the profile button, the Account page shows a blank/loading state instead of immediately redirecting to `/auth`. This happens because:
 
-### 2. Account Page (`src/pages/Account.tsx`)
-- Change `phoneDial` fallback default from `"+1"` to `"+234"` (used when no phone is saved or no dial code match is found)
-- Ensure the country dropdown defaults to "Nigeria" when no country is saved
+1. The redirect effect (`navigate("/auth")`) and the profile-loading effect run independently
+2. When there's no user, the profile fetch exits early without setting `loading` to `false`, so the page shows an infinite spinner
+3. There's a brief race between the redirect and the render
 
-### 3. Country Codes List (`src/lib/country-codes.ts`)
-- Move Nigeria to the **top** of the `countryCodes` array so it appears first in all dropdowns (country code selector and country picker)
-- All other countries remain alphabetically sorted after Nigeria
+## Solution
 
-### Technical Details
+Two small changes in `src/pages/Account.tsx`:
 
-These are small default-value changes across 3 files -- no logic or layout changes needed.
+### 1. Add early return before the loading spinner
+
+Before the loading/spinner check, add a guard that returns nothing if the user isn't authenticated (the redirect effect handles navigation):
+
+```typescript
+if (!authLoading && !user) return null;
+```
+
+This ensures the page never renders content for unauthenticated users.
+
+### 2. Fix the loading state when there's no user
+
+In the profile-fetching `useEffect`, set `setLoading(false)` in the early return when `!user`:
+
+```typescript
+if (!user) {
+  setLoading(false);
+  return;
+}
+```
+
+This prevents the infinite spinner for logged-out users and lets the redirect happen cleanly.
+
+## Files Modified
+
+- **`src/pages/Account.tsx`** -- two small guard fixes (no layout or logic changes)
 
