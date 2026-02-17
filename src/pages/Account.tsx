@@ -11,6 +11,8 @@ import { toast } from "sonner";
 
 interface Profile {
   email: string | null;
+  first_name: string | null;
+  last_name: string | null;
   phone: string | null;
   gender: string | null;
   height: number | null;
@@ -63,6 +65,8 @@ export default function Account() {
       const { error } = await supabase
         .from("profiles")
         .update({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
           phone: profile.phone,
           gender: profile.gender,
           height: profile.height,
@@ -143,6 +147,16 @@ export default function Account() {
         <section className="mb-8">
           <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">Contact</h2>
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1 block">First Name</label>
+                <Input value={profile.first_name || ""} onChange={(e) => updateField("first_name", e.target.value)} placeholder="First name" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1 block">Last Name</label>
+                <Input value={profile.last_name || ""} onChange={(e) => updateField("last_name", e.target.value)} placeholder="Last name" />
+              </div>
+            </div>
             <div>
               <label className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1 block">Email</label>
               <Input value={profile.email || ""} disabled className="bg-muted" />
