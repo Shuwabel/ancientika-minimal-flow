@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, LayoutGrid, Grid3x3, List } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCollections } from "@/lib/shopify";
@@ -35,10 +35,11 @@ export default function Shop() {
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [priceInitialized, setPriceInitialized] = useState(false);
+  const [gridView, setGridView] = useState<"small" | "large" | "list">("small");
 
-  const [availabilityOpen, setAvailabilityOpen] = useState(true);
-  const [priceOpen, setPriceOpen] = useState(true);
-  const [sizeOpen, setSizeOpen] = useState(true);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [priceOpen, setPriceOpen] = useState(false);
+  const [sizeOpen, setSizeOpen] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['shopify-products'],
@@ -86,6 +87,17 @@ export default function Shop() {
       });
     });
     return Array.from(sizes);
+  }, [products, categoryParam]);
+
+  // Stock counts for availability filter
+  const { inStockCount, outOfStockCount } = useMemo(() => {
+    const categoryProducts = categoryParam === "all"
+      ? products
+      : products.filter(p => (p.node.productType || "").toLowerCase() === categoryParam.toLowerCase());
+    return {
+      inStockCount: categoryProducts.filter(p => p.node.availableForSale).length,
+      outOfStockCount: categoryProducts.filter(p => !p.node.availableForSale).length,
+    };
   }, [products, categoryParam]);
 
   const toggleSize = (size: string) => {
@@ -160,11 +172,11 @@ export default function Shop() {
         <CollapsibleContent className="pt-3 pb-4 space-y-2.5">
           <label className="flex items-center gap-2 cursor-pointer">
             <Checkbox checked={showInStock} onCheckedChange={(c) => setShowInStock(c === true)} className="h-3.5 w-3.5" />
-            <span className="text-xs text-foreground">In stock</span>
+            <span className="text-xs text-foreground">In stock ({inStockCount})</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <Checkbox checked={showOutOfStock} onCheckedChange={(c) => setShowOutOfStock(c === true)} className="h-3.5 w-3.5" />
-            <span className="text-xs text-foreground">Out of stock</span>
+            <span className="text-xs text-foreground">Out of stock ({outOfStockCount})</span>
           </label>
         </CollapsibleContent>
       </Collapsible>
@@ -297,16 +309,42 @@ export default function Shop() {
                 </span>
               </div>
 
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                <SelectTrigger className="w-[160px] text-xs h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border z-50">
-                  {SORT_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                  <SelectTrigger className="w-[160px] text-xs h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    {SORT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="hidden md:flex items-center gap-1 border-l border-border pl-2 ml-1">
+                  <button
+                    onClick={() => setGridView("large")}
+                    className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${gridView === "large" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="Large grid"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setGridView("small")}
+                    className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${gridView === "small" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="Small grid"
+                  >
+                    <Grid3x3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setGridView("list")}
+                    className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${gridView === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="List view"
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Product Grid */}
@@ -323,7 +361,11 @@ export default function Shop() {
             ) : filtered.length === 0 ? (
               <p className="text-center text-muted-foreground py-20">No products found</p>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className={`grid gap-4 ${
+                gridView === "large" ? "grid-cols-1 md:grid-cols-2" :
+                gridView === "list" ? "grid-cols-1" :
+                "grid-cols-2 md:grid-cols-3"
+              }`}>
                 {filtered.map((product, i) => (
                   <motion.div
                     key={product.node.id}
@@ -331,7 +373,24 @@ export default function Shop() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
                   >
-                    <ProductCard product={product} />
+                    {gridView === "list" ? (
+                      <Link to={`/product/${product.node.handle}`} className="flex gap-4 border-b border-border pb-4">
+                        <div className="w-28 h-28 shrink-0 rounded-sm overflow-hidden">
+                          {product.node.images.edges[0]?.node.url ? (
+                            <img src={product.node.images.edges[0].node.url} alt={product.node.title} className="w-full h-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-center min-w-0">
+                          <p className="text-sm font-medium truncate">{product.node.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">₦{parseFloat(product.node.priceRange.minVariantPrice.amount).toLocaleString()}</p>
+                          {!product.node.availableForSale && <span className="text-[10px] text-muted-foreground mt-1">Sold out</span>}
+                        </div>
+                      </Link>
+                    ) : (
+                      <ProductCard product={product} />
+                    )}
                   </motion.div>
                 ))}
               </div>
