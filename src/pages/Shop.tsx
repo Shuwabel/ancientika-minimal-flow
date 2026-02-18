@@ -163,6 +163,9 @@ export default function Shop() {
   // Sidebar filter content (shared between desktop sidebar and mobile sheet)
   const FilterSidebar = () => (
     <div className="space-y-1">
+      <h2 className="text-sm uppercase tracking-[0.15em] font-medium text-foreground mb-4">
+        {categoryTitle}
+      </h2>
       {/* Availability */}
       <Collapsible open={availabilityOpen} onOpenChange={setAvailabilityOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-xs uppercase tracking-[0.15em] font-medium text-foreground border-b border-border">
