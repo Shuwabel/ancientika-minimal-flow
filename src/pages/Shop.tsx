@@ -377,22 +377,21 @@ export default function Shop() {
                 transition={{ delay: i * 0.03 }}>
 
                     {gridView === "list" ?
-                <Link to={`/product/${product.node.handle}`} className="flex gap-4 border-b border-border pb-4">
-                        <div className="w-28 h-28 shrink-0 rounded-sm overflow-hidden">
+                <Link to={`/product/${product.node.handle}`} state={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }} className="flex items-center gap-4 border-b border-border pb-4">
+                        <div className="w-20 h-20 shrink-0 rounded-sm overflow-hidden">
                           {product.node.images.edges[0]?.node.url ?
                     <img src={product.node.images.edges[0].node.url} alt={product.node.title} className="w-full h-full object-cover" loading="lazy" /> :
-
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>
                     }
                         </div>
-                        <div className="flex flex-col justify-center min-w-0">
-                          <p className="text-sm font-medium truncate">{product.node.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">₦{parseFloat(product.node.priceRange.minVariantPrice.amount).toLocaleString()}</p>
-                          {!product.node.availableForSale && <span className="text-[10px] text-muted-foreground mt-1">Sold out</span>}
+                        <p className="text-sm font-medium truncate flex-1">{product.node.title}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <p className="text-sm font-semibold">₦{parseFloat(product.node.priceRange.minVariantPrice.amount).toLocaleString()}</p>
+                          {!product.node.availableForSale && <span className="text-[10px] text-muted-foreground">Sold out</span>}
                         </div>
                       </Link> :
 
-                <ProductCard product={product} />
+                <ProductCard product={product} linkState={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }} />
                 }
                   </motion.div>
               )}

@@ -211,6 +211,9 @@ export default function Index() {
         </motion.div>
       </section>
 
+      {/* Featured */}
+      <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
+
       {/* Shop by Category */}
       <section className="py-16 md:py-20">
         <div className="max-w-5xl mx-auto px-4">
@@ -253,9 +256,6 @@ export default function Index() {
           )}
         </div>
       </section>
-
-      {/* Featured */}
-      <FeaturedCarousel products={featuredProducts} isLoading={isFeaturedLoading} />
 
       {/* On Sale */}
       {!isLoading && discountedProducts.length > 0 && (
