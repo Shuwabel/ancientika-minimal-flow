@@ -1,7 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2, Ruler, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Minus, Plus, Loader2, Ruler, Sparkles, Zap, Lock, Leaf } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,12 +34,17 @@ function sortSizes(values: string[]): string[] {
 
 export default function ProductDetail() {
   const { handle } = useParams();
+  const location = useLocation();
   const { addItem, isLoading: cartLoading } = useCartStore();
   const { getRecommendation } = useSizeStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [optionsInitialized, setOptionsInitialized] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const fromCategory = (location.state as any)?.fromCategory;
+  const fromCategoryTitle = (location.state as any)?.fromCategoryTitle;
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['shopify-product', handle],
@@ -76,6 +81,7 @@ export default function ProductDetail() {
     setOptionsInitialized(false);
     setSelectedOptions({});
     setQuantity(1);
+    setSelectedImageIndex(0);
   }, [handle]);
 
   if (isLoading) {
@@ -155,17 +161,39 @@ export default function ProductDetail() {
 
   return (
     <div className="container py-8">
-      <Link to="/shop" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
-        <ArrowLeft className="h-4 w-4" /> Back to shop
+      <Link
+        to={fromCategory && fromCategory !== "all" ? `/shop?category=${fromCategory}` : "/shop"}
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
+      >
+        <ArrowLeft className="h-4 w-4" /> {fromCategoryTitle && fromCategory !== "all" ? `Back to ${fromCategoryTitle}` : "Back to shop"}
       </Link>
 
       <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="aspect-[3/4] bg-muted rounded-sm overflow-hidden">
-          {imageUrl ? (
-            <img src={imageUrl} alt={product.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image</div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+          {/* Thumbnails */}
+          {product.images.edges.length > 1 && (
+            <div className="flex flex-col gap-2 shrink-0">
+              {product.images.edges.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`w-16 h-20 rounded-sm overflow-hidden border-2 transition-colors ${
+                    selectedImageIndex === idx ? "border-foreground" : "border-transparent hover:border-muted-foreground/40"
+                  }`}
+                >
+                  <img src={img.node.url} alt={img.node.altText || `${product.title} ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
+          {/* Main image */}
+          <div className="flex-1 aspect-[3/4] bg-muted rounded-sm overflow-hidden">
+            {product.images.edges[selectedImageIndex]?.node.url ? (
+              <img src={product.images.edges[selectedImageIndex].node.url} alt={product.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image</div>
+            )}
+          </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex flex-col">
@@ -175,9 +203,20 @@ export default function ProductDetail() {
           </div>
 
           <h1 className="text-2xl md:text-3xl font-light mb-2">{product.title}</h1>
-          <div className="flex items-center gap-3 mb-6">
-            <p className="text-xl">{currencySymbol}{price.toFixed(2)}</p>
+          
+          <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground mb-1">Price</p>
+          <div className="flex items-center gap-3 mb-3">
+            <p className="text-2xl font-semibold">{currencySymbol}{price.toFixed(2)}</p>
             {isOnSale && <p className="text-sm text-muted-foreground line-through">{currencySymbol}{compareAt!.toFixed(2)}</p>}
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">Tax included. Shipping calculated at checkout.</p>
+          <div className="flex items-center gap-5 mb-6">
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Lock className="h-3.5 w-3.5" /> Secure payments
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Leaf className="h-3.5 w-3.5" /> Carbon neutral
+            </span>
           </div>
 
           {/* Options */}

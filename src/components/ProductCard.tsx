@@ -9,7 +9,7 @@ import DesktopQuickAdd from "@/components/DesktopQuickAdd";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 
-export default function ProductCard({ product, aspectRatio }: { product: ShopifyProduct; aspectRatio?: string }) {
+export default function ProductCard({ product, aspectRatio, linkState }: { product: ShopifyProduct; aspectRatio?: string; linkState?: Record<string, string> }) {
   const [hovered, setHovered] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -47,7 +47,7 @@ export default function ProductCard({ product, aspectRatio }: { product: Shopify
         onMouseEnter={() => !isMobile && setHovered(true)}
         onMouseLeave={() => !isMobile && setHovered(false)}
       >
-        <Link to={`/product/${node.handle}`} className="block">
+        <Link to={`/product/${node.handle}`} state={linkState} className="block">
           <div
             className="rounded-sm overflow-hidden relative"
             style={{ aspectRatio: resolvedAspect }}
@@ -110,7 +110,7 @@ export default function ProductCard({ product, aspectRatio }: { product: Shopify
           <div className="mt-2 space-y-0.5">
             <p className="text-xs font-medium truncate">{node.title}</p>
             <div className="flex items-center gap-1.5">
-              <p className="text-xs">{currencySymbol}{price.toFixed(2)}</p>
+              <p className="text-xs font-semibold">{currencySymbol}{price.toFixed(2)}</p>
               {isOnSale && (
                 <p className="text-[10px] text-muted-foreground line-through">{currencySymbol}{compareAt!.toFixed(2)}</p>
               )}
