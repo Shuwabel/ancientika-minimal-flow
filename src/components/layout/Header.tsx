@@ -10,6 +10,59 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import PredictiveSearch from "@/components/PredictiveSearch";
 import { AnimatePresence, motion } from "framer-motion";
 
+function ShopDropdown({ collections, navigate }: { collections: any[]; navigate: (to: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
+      >
+        Shop
+        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-background border border-border rounded-sm shadow-lg z-50 min-w-[160px] py-1"
+          >
+            <button
+              onClick={() => { setOpen(false); navigate("/shop"); }}
+              className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              All
+            </button>
+            {collections.map((col) => (
+              <button
+                key={col.node.handle}
+                onClick={() => { setOpen(false); navigate(`/shop?category=${col.node.handle}`); }}
+                className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                {col.node.title}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Header() {
   const totalItems = useCartStore(s => s.items.reduce((sum, i) => sum + i.quantity, 0));
   const setIsOpen = useCartStore(s => s.setIsOpen);
@@ -115,14 +168,9 @@ export default function Header() {
                   </Link>
                 </div>
 
-                {/* Center: Desktop Shop nav */}
+                {/* Center: Desktop Shop nav with dropdown */}
                 <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center">
-                  <Link
-                    to="/shop"
-                    className="text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
-                  >
-                    Shop
-                  </Link>
+                  <ShopDropdown collections={collections} navigate={navigate} />
                 </nav>
 
                 {/* Right: Search + Cart + Hamburger */}
