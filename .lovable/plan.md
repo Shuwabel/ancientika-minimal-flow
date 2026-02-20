@@ -1,71 +1,105 @@
 
+# Header, Homepage & Shop Enhancements
 
-# Shop Page & Product Detail Enhancements
+## 6 Changes at a Glance
 
-## 5 Changes
+1. Desktop header: "Shop" nav link centered in the header (visible only on `md+`)
+2. Mobile scroll-to-top fix: use `ScrollRestoration` or a scroll-to-top component in the router
+3. Unified typography: "Shop by Category" heading matches "Featured" style
+4. Shop by Category carousel: tiles 25% larger
+5. Hamburger menu moves to the right side of the header, next to the cart icon
+6. List view: image 120% larger (from `w-20 h-20` to `w-44 h-44`)
 
-### 1. Move "Shop by Category" below "Featured" on homepage
-Swap the order of the two sections on the Index page so Featured appears first, then Shop by Category.
-
-### 2. List view: name on left, price on right
-In the Shop page list view, restructure the layout so the product name sits on the left and the price is pushed to the far right of the row, matching the reference image.
-
-### 3. Bold, prominent prices across the site
-Make prices more visually prominent:
-- **ProductCard**: increase price font weight to `font-semibold`
-- **ProductDetail**: increase price size and weight to `text-2xl font-semibold`
-- **Shop list view**: price displayed as `font-semibold`
-
-### 4. Enrich the Product Detail page
-Following the reference image, add more useful information below the price and above the action buttons:
-- **"Price" label** above the price value (like in reference)
-- **Trust signals**: "Secure payments" and "Carbon neutral" with small icons
-- **"Tax included. Shipping calculated at checkout."** text
-- **Image thumbnails**: show all product images as small clickable thumbnails on the left side of the main image, allowing users to switch the displayed image
-
-### 5. Dynamic "Back to [collection]" button
-Replace the static "Back to shop" link with a dynamic one that reads the `category` query param from the referrer. When a user navigates from a collection (e.g., `/shop?category=bottoms`), the link says "Back to Bottoms" and navigates back to that filtered collection. Falls back to "Back to shop" linking to `/shop` when there's no referrer category.
+---
 
 ## Technical Details
 
+### File: `src/App.tsx`
+Add a `<ScrollToTop>` component that calls `window.scrollTo(0, 0)` on every route change. This fixes the mobile issue where navigating from the bottom of a page leaves the new page scrolled to the bottom.
+
+```tsx
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+```
+
+Place `<ScrollToTop />` inside `<BrowserRouter>` (or inside `AppContent`), before `<Layout>`.
+
+---
+
+### File: `src/components/layout/Header.tsx`
+
+**Current layout:**
+```
+[Hamburger + Logo]          [Search + Cart]
+```
+
+**New layout:**
+```
+[Logo]     [Shop (desktop nav)]     [Search + Cart + Hamburger]
+```
+
+**Changes:**
+
+1. **Move hamburger to the right**, placing it after the cart icon in the right icon group.
+
+2. **Add "Shop" desktop nav link** centered in the header using absolute positioning (so it sits truly flush in the middle regardless of left/right element widths):
+   ```tsx
+   {/* Center: Desktop Shop nav */}
+   <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-6">
+     <NavLink to="/shop">Shop</NavLink>
+     {/* Optionally a dropdown with collections */}
+   </nav>
+   ```
+   The header container gets `relative` so the absolute center nav works correctly.
+
+3. **Remove "Shop" from the mobile sidebar** since it stays in the hamburger (which is still shown on mobile). On desktop the hamburger can be hidden since Shop is now visible in the nav. Keep hamburger visible on mobile to show the full menu (About, Contact, etc.).
+
+   - Hamburger: `md:hidden` OR keep on both but move to right side. Given the request says "right beside the shop icon" (cart), keep it visible on all screen sizes but position it on the right.
+
+4. The left side becomes just the logo on desktop:
+   ```tsx
+   <div className="flex items-center">
+     <Link to="/"><span style={{ fontFamily: 'PorshaRichela' }}>ancientika</span></Link>
+   </div>
+   ```
+
+5. Right side:
+   ```tsx
+   <div className="flex items-center gap-3">
+     <SearchButton />
+     <CartButton />
+     <HamburgerSheet /> {/* Now here, right of cart */}
+   </div>
+   ```
+
+The Sheet content (hamburger menu) still has all nav items (Home, Shop with collections, About, Contact) and stays accessible on both mobile and desktop for quick access.
+
+---
+
 ### File: `src/pages/Index.tsx`
 
-Swap the order of the "Shop by Category" section (lines 214-255) and the "Featured" section (line 258). Featured comes first, then Shop by Category.
+**"Shop by Category" heading** — change from:
+```tsx
+<h2 className="text-base md:text-lg font-medium tracking-wide text-center mb-10">Shop by Category</h2>
+```
+To match "Featured" style:
+```tsx
+<h2 className="uppercase font-medium tracking-[0.15em]" style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}>
+  Shop by Category
+</h2>
+```
+Also add a "View all" link to the right to match the "Featured" section's row layout.
+
+**Tile sizing** — increase by 25%. Current `maxWidth: "160px"` becomes `maxWidth: "200px"`. The `calc((100% - 1.5rem) / 3)` stays, the max just lifts. Also bump the container from `max-w-5xl` to `max-w-6xl` to accommodate larger tiles.
+
+---
 
 ### File: `src/pages/Shop.tsx`
 
-**List view layout (lines 380-393)**: Restructure the flex layout so the product info is `flex-1` with name on the left, and the price is a separate element aligned to the right:
-
+**List view image** — change from `w-20 h-20` (80px) to `w-44 h-44` (176px) — approximately 120% increase:
 ```tsx
-<Link to={...} className="flex items-center gap-4 border-b border-border pb-4">
-  <div className="w-20 h-20 shrink-0 ...">image</div>
-  <p className="text-sm font-medium truncate flex-1">{title}</p>
-  <p className="text-sm font-semibold shrink-0">price</p>
-</Link>
+<div className="w-44 h-44 shrink-0 rounded-sm overflow-hidden">
 ```
-
-### File: `src/components/ProductCard.tsx`
-
-**Price text (around line 104)**: Change from `text-xs` to `text-xs font-semibold` for the price element.
-
-### File: `src/pages/ProductDetail.tsx`
-
-**State**: Add `selectedImageIndex` state (default 0) for image gallery.
-
-**Image section (lines 162-169)**: Replace single image with a layout containing:
-- Left column: vertical stack of clickable thumbnail images (all product images)
-- Right/main area: the currently selected large image
-
-**Price section (lines 178-181)**: Add a "Price" label above the price, make price `text-2xl font-semibold`.
-
-**New info section** below price, before options:
-- Icon row: "Secure payments" (lock icon) and "Carbon neutral" (leaf icon)
-- Small text: "Tax included. Shipping calculated at checkout."
-
-**Back button (line 158-160)**: Read `category` from URL search params or use `useLocation` to check the referrer. Pass `category` via navigation state from Shop page links, or parse from `document.referrer`. Display "Back to {Category Name}" when available.
-
-Implementation approach for dynamic back link:
-- Use `useLocation()` to read `location.state.fromCategory`
-- In Shop.tsx, pass state when linking to product: `<Link to={...} state={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }}>`
-- In ProductDetail, read this state and render accordingly
-
