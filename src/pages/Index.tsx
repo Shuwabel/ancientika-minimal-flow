@@ -216,12 +216,22 @@ export default function Index() {
 
       {/* Shop by Category */}
       <section className="py-16 md:py-20">
-        <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-base md:text-lg font-medium tracking-wide text-center mb-10">Shop by Category</h2>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+            <h2
+              className="uppercase font-medium tracking-[0.15em]"
+              style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
+            >
+              Shop by Category
+            </h2>
+            <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
+              View all
+            </Link>
+          </div>
           {isCollectionsLoading ? (
             <div className="flex flex-wrap justify-center gap-3 md:gap-4">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="space-y-2" style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "160px" }}>
+                <div key={i} className="space-y-2" style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "200px" }}>
                   <Skeleton className="aspect-square w-full rounded-md" />
                   <Skeleton className="h-3 w-3/4 mx-auto" />
                 </div>
@@ -236,7 +246,7 @@ export default function Index() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.06 }}
-                  style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "160px" }}
+                  style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "200px" }}
                 >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
                     <div className="aspect-square rounded-md overflow-hidden bg-muted/60 transition-shadow duration-300 group-hover:shadow-md">
