@@ -378,7 +378,7 @@ export default function Shop() {
 
                     {gridView === "list" ?
                 <Link to={`/product/${product.node.handle}`} state={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }} className="flex items-center gap-4 border-b border-border pb-4">
-                        <div className="w-20 h-20 shrink-0 rounded-sm overflow-hidden">
+                        <div className="w-44 h-44 shrink-0 rounded-sm overflow-hidden">
                           {product.node.images.edges[0]?.node.url ?
                     <img src={product.node.images.edges[0].node.url} alt={product.node.title} className="w-full h-full object-cover" loading="lazy" /> :
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>
