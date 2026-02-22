@@ -109,7 +109,7 @@ export default function QuickViewModal({ product, open, onOpenChange }: QuickVie
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-lg">
+      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-2xl glass-heavy bg-background/80">
         <div className="grid md:grid-cols-2">
           {/* Image gallery */}
           <div className="relative bg-muted">

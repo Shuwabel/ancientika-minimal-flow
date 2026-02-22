@@ -127,7 +127,7 @@ export default function Index() {
   return (
     <div>
       {/* Sticky Newsletter Banner */}
-      <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
+      <div className="sticky top-16 z-30 glass-dark text-accent-foreground py-2 overflow-hidden">
         <button onClick={() => setShowPopup(true)} className="w-full animate-marquee whitespace-nowrap flex cursor-pointer">
           {[...Array(4)].map((_, i) => (
             <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
@@ -153,7 +153,7 @@ export default function Index() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative bg-primary text-primary-foreground rounded-lg p-8 mx-4 w-full max-w-md shadow-2xl"
+              className="relative glass-heavy text-primary-foreground rounded-2xl p-8 mx-4 w-full max-w-md shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -249,7 +249,7 @@ export default function Index() {
                   style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "200px" }}
                 >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
-                    <div className="aspect-square rounded-md overflow-hidden bg-muted/60 transition-shadow duration-300 group-hover:shadow-md">
+                    <div className="aspect-square rounded-xl overflow-hidden glass-card transition-shadow duration-300 group-hover:shadow-lg">
                       {col.node.image ? (
                         <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
@@ -280,7 +280,7 @@ export default function Index() {
       )}
 
       {/* Philosophy */}
-      <section className="bg-card">
+      <section className="glass-card">
         <div className="container py-24 max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-12 text-center">Philosophy</h2>
@@ -303,7 +303,7 @@ export default function Index() {
       </section>
 
       {/* Newsletter */}
-      <section id="newsletter" className="bg-primary text-primary-foreground">
+      <section id="newsletter" className="glass-dark text-primary-foreground">
         <div className="container py-16 text-center max-w-md mx-auto">
           <h2 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-4">Newsletter</h2>
           <p className="text-sm opacity-80 mb-6">First access to new drops and exclusive offers.</p>
