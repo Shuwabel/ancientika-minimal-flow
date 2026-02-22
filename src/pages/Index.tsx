@@ -216,18 +216,18 @@ export default function Index() {
 
       {/* Shop by Category */}
       <section className="py-16 md:py-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
-            <h2
-              className="uppercase font-medium tracking-[0.15em]"
-              style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
-            >
-              Shop by Category
-            </h2>
-            <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
-              View all
-            </Link>
-          </div>
+      <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+        <h2
+          className="uppercase font-medium tracking-[0.15em]"
+          style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
+        >
+          Shop by Category
+        </h2>
+        <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
+          View all
+        </Link>
+      </div>
+      <div className="max-w-6xl mx-auto px-4">
           {isCollectionsLoading ? (
             <div className="flex flex-wrap justify-center gap-3 md:gap-4">
               {[...Array(6)].map((_, i) => (
