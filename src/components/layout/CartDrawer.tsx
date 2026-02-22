@@ -28,7 +28,7 @@ export default function CartDrawer() {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col">
+      <SheetContent className="w-full sm:max-w-md flex flex-col glass-heavy bg-background/80">
         <SheetHeader>
           <SheetTitle className="text-lg uppercase tracking-[0.1em]">Cart</SheetTitle>
         </SheetHeader>

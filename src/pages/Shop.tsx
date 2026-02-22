@@ -274,7 +274,7 @@ export default function Shop() {
       <div className="container py-8">
         <div className="flex gap-8">
           {/* Desktop Sidebar */}
-          <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start">
+          <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start glass-card rounded-xl p-4">
             <FilterSidebar />
           </aside>
 
@@ -317,7 +317,7 @@ export default function Shop() {
                   <SelectTrigger className="w-[160px] text-xs h-8">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
+                  <SelectContent className="glass-heavy bg-background/80 border border-white/10 z-50">
                     {SORT_OPTIONS.map((opt) =>
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     )}

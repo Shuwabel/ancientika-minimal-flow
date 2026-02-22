@@ -39,7 +39,7 @@ function ShopDropdown({ collections, navigate }: { collections: any[]; navigate:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-background border border-border rounded-sm shadow-lg z-50 min-w-[160px] py-1"
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 glass-heavy rounded-lg shadow-xl z-50 min-w-[160px] py-1"
           >
             <button
               onClick={() => { setOpen(false); navigate("/shop"); }}
@@ -118,7 +118,7 @@ export default function Header() {
 
   return (
     <>
-      <header ref={headerRef} className="sticky top-0 z-40 border-b border-border">
+      <header ref={headerRef} className="sticky top-0 z-40 border-b border-white/10">
         <AnimatePresence mode="wait">
           {searchOpen ? (
             <motion.div
@@ -127,7 +127,7 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="bg-accent h-16 flex items-center relative z-50"
+              className="glass-dark h-16 flex items-center relative z-50"
             >
               <div className="container flex items-center gap-3 h-full">
                 <Search className="h-5 w-5 text-accent-foreground/70 shrink-0" />
@@ -158,7 +158,7 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 h-16"
+              className="glass-heavy h-16"
             >
               <div className="container relative flex h-16 items-center justify-between">
                 {/* Left: Logo */}
@@ -194,7 +194,7 @@ export default function Header() {
                         <Menu className="h-5 w-5" />
                       </button>
                     </SheetTrigger>
-                    <SheetContent side="right" className="w-56">
+                    <SheetContent side="right" className="w-56 glass-heavy bg-background/80">
                       <SheetTitle className="sr-only">Navigation</SheetTitle>
                       <nav className="flex flex-col gap-1 mt-8">
                         {!isHomePage && (
