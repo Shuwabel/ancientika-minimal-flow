@@ -40,7 +40,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                    className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                   >
                     {link.label}
                   </Link>
@@ -51,7 +51,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">Legal</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">Legal</h4>
             <ul className="space-y-2">
               {[
                 "Privacy Policy",
