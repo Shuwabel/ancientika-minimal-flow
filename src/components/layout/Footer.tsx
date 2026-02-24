@@ -78,7 +78,7 @@ export default function Footer() {
                   href="https://www.instagram.com/ancientika/?utm_source=ig_web_button_share_sheet"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   Instagram
                 </a>
@@ -88,7 +88,7 @@ export default function Footer() {
                   href="https://www.tiktok.com/@ancientika?_r=1&_t=ZS-93vY16bppCL"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   TikTok
                 </a>
@@ -96,7 +96,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/#newsletter"
-                  className="text-xs uppercase tracking-[0.1em] opacity-80 hover:opacity-100 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   Subscribe
                 </Link>
