@@ -305,8 +305,8 @@ export default function Index() {
       {/* Newsletter */}
       <section id="newsletter" className="glass-dark text-primary-foreground">
         <div className="container py-16 text-center max-w-md mx-auto">
-          <h2 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-4">Newsletter</h2>
-          <p className="text-sm opacity-80 mb-6">First access to new drops and exclusive offers.</p>
+          <h2 className="text-xs uppercase tracking-[0.2em] opacity-90 mb-4">Newsletter</h2>
+          <p className="text-sm opacity-90 mb-6">First access to new drops and exclusive offers.</p>
           <form onSubmit={handleSubscribe} className="flex gap-2">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="flex-1 bg-primary-foreground/10 border border-primary-foreground/20 rounded-sm px-4 py-2.5 text-sm placeholder:text-primary-foreground/40 focus:outline-none focus:border-primary-foreground/50" />
             <Button type="submit" variant="secondary" className="uppercase tracking-[0.1em] text-xs" disabled={subscribing}>

@@ -107,7 +107,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-6 border-t border-primary-foreground/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <img src={mainLogo} alt="Ancientika" className="h-10 brightness-0 invert opacity-70" />
-          <p className="text-xs opacity-50">
+          <p className="text-xs opacity-70">
             © {new Date().getFullYear()} ancientika. All rights reserved.
           </p>
         </div>
