@@ -164,7 +164,7 @@ export default function Index() {
               </button>
               <h3 className="text-xs uppercase tracking-[0.2em] opacity-90 mb-2">Newsletter</h3>
               <p className="font-display text-2xl mb-2">Stay in the loop</p>
-              <p className="text-sm opacity-70 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
+              <p className="text-sm opacity-90 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
               <form onSubmit={handleSubscribe} className="space-y-3">
                 <input
                   type="email"
