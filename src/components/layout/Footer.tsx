@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* The Company */}
           <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-70">The Company</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">The Company</h4>
             <ul className="space-y-2">
               {[
                 { label: "About", href: "/about" },
