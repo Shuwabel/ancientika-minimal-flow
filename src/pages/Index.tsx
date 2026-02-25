@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Loader2, X } from "lucide-react";
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import mainLogo from "@/assets/Ancientika_logo_mocha_brown.png";
+import horizontalLogo from "@/assets/ancientika_logo_and_name_horizontal_2.png";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCollections } from "@/lib/shopify";
@@ -197,8 +197,7 @@ export default function Index() {
           transition={{ duration: 0.8 }}
           className="relative text-center px-6 max-w-2xl mx-auto"
         >
-          <img src={mainLogo} alt="Ancientika" className="h-20 md:h-28 mx-auto mb-4" />
-          <h1 className="font-display text-5xl md:text-7xl mb-4">ancientika</h1>
+          <img src={horizontalLogo} alt="Ancientika" className="h-28 md:h-40 mx-auto mb-4" />
           <p className="text-base md:text-lg mb-8 tracking-wide">
             Your presence, refined.
           </p>
@@ -283,19 +282,19 @@ export default function Index() {
       <section className="glass-card">
         <div className="container py-24 max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-            <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-12 text-center">Philosophy</h2>
+            <h2 className="text-xs uppercase tracking-[0.2em] text-foreground/80 mb-12 text-center">Philosophy</h2>
             <div className="grid md:grid-cols-3 gap-10 text-center">
               <div>
                 <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Craftsmanship</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">Every piece is constructed by skilled artisans using time-honoured techniques. We believe in making fewer things, better — garments that reward attention to detail.</p>
+                <p className="text-foreground/80 text-sm leading-relaxed">Every piece is constructed by skilled artisans using time-honoured techniques. We believe in making fewer things, better — garments that reward attention to detail.</p>
               </div>
               <div>
                 <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Sustainability</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">Responsibly sourced materials, low-impact processes, and a commitment to reducing waste at every stage. Quality over quantity means less ends up discarded.</p>
+                <p className="text-foreground/80 text-sm leading-relaxed">Responsibly sourced materials, low-impact processes, and a commitment to reducing waste at every stage. Quality over quantity means less ends up discarded.</p>
               </div>
               <div>
                 <h3 className="text-sm uppercase tracking-[0.15em] mb-3 font-medium">Timelessness</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">Designed to transcend seasons and trends. Where Scandinavian restraint meets Japanese reverence for craft — true luxury isn't loud, it endures.</p>
+                <p className="text-foreground/80 text-sm leading-relaxed">Designed to transcend seasons and trends. Where Scandinavian restraint meets Japanese reverence for craft — true luxury isn't loud, it endures.</p>
               </div>
             </div>
           </motion.div>
@@ -305,8 +304,8 @@ export default function Index() {
       {/* Newsletter */}
       <section id="newsletter" className="glass-dark text-primary-foreground">
         <div className="container py-16 text-center max-w-md mx-auto">
-          <h2 className="text-xs uppercase tracking-[0.2em] opacity-90 mb-4">Newsletter</h2>
-          <p className="text-sm opacity-90 mb-6">First access to new drops and exclusive offers.</p>
+          <h2 className="text-xs uppercase tracking-[0.2em] mb-4">Newsletter</h2>
+          <p className="text-sm mb-6">First access to new drops and exclusive offers.</p>
           <form onSubmit={handleSubscribe} className="flex gap-2">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="flex-1 bg-primary-foreground/10 border border-primary-foreground/20 rounded-sm px-4 py-2.5 text-sm placeholder:text-primary-foreground/40 focus:outline-none focus:border-primary-foreground/50" />
             <Button type="submit" variant="secondary" className="uppercase tracking-[0.1em] text-xs" disabled={subscribing}>
