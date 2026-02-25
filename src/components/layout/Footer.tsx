@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* The Company */}
           <div>
-            <h4 className="text-sm uppercase tracking-[0.2em] mb-4">The Company</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">The Company</h4>
             <ul className="space-y-2">
               {[
                 { label: "About", href: "/about" },
@@ -17,7 +17,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                    className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                   >
                     {link.label}
                   </Link>
@@ -28,7 +28,7 @@ export default function Footer() {
 
           {/* Assistance */}
           <div>
-            <h4 className="text-sm uppercase tracking-[0.2em] mb-4">Assistance</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">Assistance</h4>
             <ul className="space-y-2">
               {[
                 { label: "Contact Us", href: "/contact" },
@@ -40,7 +40,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                    className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                   >
                     {link.label}
                   </Link>
@@ -51,7 +51,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-sm uppercase tracking-[0.2em] mb-4">Legal</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">Legal</h4>
             <ul className="space-y-2">
               {[
                 "Privacy Policy",
@@ -60,7 +60,7 @@ export default function Footer() {
                 <li key={label}>
                   <Link
                     to="#"
-                    className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                    className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                   >
                     {label}
                   </Link>
@@ -71,14 +71,14 @@ export default function Footer() {
 
           {/* Follow Us */}
           <div>
-            <h4 className="text-sm uppercase tracking-[0.2em] mb-4">Follow Us</h4>
+            <h4 className="text-xs uppercase tracking-[0.2em] mb-4 opacity-90">Follow Us</h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="https://www.instagram.com/ancientika/?utm_source=ig_web_button_share_sheet"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   Instagram
                 </a>
@@ -88,7 +88,7 @@ export default function Footer() {
                   href="https://www.tiktok.com/@ancientika?_r=1&_t=ZS-93vY16bppCL"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   TikTok
                 </a>
@@ -96,7 +96,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/#newsletter"
-                  className="text-sm uppercase tracking-[0.1em] hover:opacity-80 transition-opacity"
+                  className="text-xs uppercase tracking-[0.1em] opacity-90 hover:opacity-100 transition-opacity"
                 >
                   Subscribe
                 </Link>
@@ -107,7 +107,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-6 border-t border-primary-foreground/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <img src={mainLogo} alt="Ancientika" className="h-10 brightness-0 invert opacity-70" />
-          <p className="text-sm opacity-80">
+          <p className="text-xs opacity-70">
             © {new Date().getFullYear()} ancientika. All rights reserved.
           </p>
         </div>
