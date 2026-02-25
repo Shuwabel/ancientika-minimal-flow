@@ -1,53 +1,45 @@
 
 
-# Improve Font Readability Across the Website
+# Fix Typography Readability + Replace Hero Brand Text with Logo
 
 ## Problem
-Text across the site is hard to read because of three compounding factors:
-- The `muted-foreground` color is too washed out (45% lightness)
-- Many text elements use `opacity-70` or `opacity-80`, reducing contrast further
-- Heading weight (500) is too close to body text weight, making the hierarchy unclear
-- Glass surfaces behind text reduce readability
+From the screenshots, text across the site is nearly invisible against the glassmorphism surfaces. The `muted-foreground` token and opacity values are still too weak. Additionally, the hero section needs the "ancientika" text replaced with the horizontal logo+name image.
 
 ## Changes
 
-### 1. Strengthen color tokens (`src/index.css`)
+### 1. Stronger foreground colors (`src/index.css`)
 
 **Light mode:**
-- `--muted-foreground`: change from `30 6% 45%` to `30 8% 30%` (darker, more readable)
-- `--foreground`: keep as-is (already dark enough)
+- `--foreground`: darken from `30 10% 10%` to `30 10% 5%` (near black)
+- `--muted-foreground`: darken from `30 8% 30%` to `30 10% 20%` (much darker, clearly readable)
 
 **Dark mode:**
-- `--muted-foreground`: change from `30 8% 55%` to `30 10% 70%` (brighter, easier to read)
+- `--muted-foreground`: brighten from `30 10% 70%` to `30 12% 80%` (brighter white)
 
-**Headings:**
-- Bump heading weight from `500` to `600`
+**Body text:**
+- Increase base font size by adding `font-size: 15px` (slightly larger than browser default 16px won't help much -- instead we'll target specific elements)
 
-### 2. Remove excessive opacity from text (`src/pages/Index.tsx`)
-- Newsletter banner marquee: keep `text-xs` but remove any opacity reduction
-- Newsletter popup: change `opacity-70` on subtitle/label to `opacity-90`
-- Newsletter section: change `opacity-70` and `opacity-80` to `opacity-90`
-- Philosophy section body text: already uses `text-muted-foreground` which will improve with the token change
+**Sidebar / navigation text:**
+- Bump from `text-sm` (14px) to `text-base` (16px) for nav items in the mobile sidebar
 
-### 3. Remove excessive opacity from Footer (`src/components/layout/Footer.tsx`)
-- Footer headings: change `opacity-70` to `opacity-90`
-- Footer links: change `opacity-80` to `opacity-90`
-- Copyright text: change `opacity-50` to `opacity-70`
+### 2. Replace hero "ancientika" text with logo image (`src/pages/Index.tsx`)
+- Remove the `<h1 className="font-display ...">ancientika</h1>` line
+- Replace the small icon logo (`mainLogo`) with the horizontal logo+name image (`ancientika_logo_and_name_horizontal_2.png`), sized larger (e.g., `h-28 md:h-40`)
 
-### 4. About page (`src/pages/About.tsx`)
-- Body text currently uses `text-muted-foreground` which will automatically improve with the token fix
-- "Our Values" heading: change `opacity-70` (via `text-muted-foreground`) -- no extra opacity used, so the token fix handles it
+### 3. Boost text contrast in Header sidebar (`src/components/layout/Header.tsx`)
+- Change sidebar nav items from `text-muted-foreground` to `text-foreground` so they're clearly visible against the glass background
+- Increase sidebar nav text from `text-sm` to `text-base` for better readability
+- Same for desktop dropdown items
 
-### 5. Contact page (`src/pages/Contact.tsx`)
-- Labels use `text-muted-foreground` -- handled by token fix
-- Subtitle uses `text-muted-foreground` -- handled by token fix
+### 4. Boost text contrast in Footer (`src/components/layout/Footer.tsx`)
+- Change footer heading and link opacity from `opacity-90` to `opacity-100` (full white on dark glass)
+- Change copyright opacity from `opacity-70` to `opacity-80`
+- Increase footer link text from `text-xs` to `text-sm` for readability
 
-### 6. Header nav (`src/components/layout/Header.tsx`)
-- Sidebar menu items use `text-muted-foreground` -- handled by token fix
-- Shop dropdown items use `text-muted-foreground` -- handled by token fix
-
-### 7. Product Card (`src/components/ProductCard.tsx`)
-- Price and title text are already using `font-medium` / `font-semibold` -- no changes needed
+### 5. Boost text on Index page sections (`src/pages/Index.tsx`)
+- Newsletter banner: ensure text is fully opaque
+- Newsletter section: boost text opacity to 1.0
+- Philosophy section: change body text from `text-muted-foreground` to `text-foreground` with slightly reduced opacity (`opacity-80`)
 
 ---
 
@@ -55,8 +47,7 @@ Text across the site is hard to read because of three compounding factors:
 
 | File | What changes |
 |---|---|
-| `src/index.css` | Darken `--muted-foreground` in both light and dark mode; bump heading weight to 600 |
-| `src/pages/Index.tsx` | Replace `opacity-70` / `opacity-80` with `opacity-90` on newsletter and popup text |
-| `src/components/layout/Footer.tsx` | Boost opacity on headings (`opacity-90`), links (`opacity-90`), copyright (`opacity-70`) |
-
-Only 3 files need editing. The color token change in `index.css` automatically improves readability across the entire site (Header, Shop, About, Contact, Product Detail) without touching those files individually.
+| `src/index.css` | Darken `--foreground` and `--muted-foreground` further in both modes |
+| `src/pages/Index.tsx` | Replace hero h1 text with horizontal logo image; boost text opacity across sections |
+| `src/components/layout/Header.tsx` | Use `text-foreground` instead of `text-muted-foreground` for nav items; increase font size |
+| `src/components/layout/Footer.tsx` | Full opacity on text; increase link font size to `text-sm` |
