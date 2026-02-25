@@ -27,7 +27,7 @@ function ShopDropdown({ collections, navigate }: { collections: any[]; navigate:
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
+        className="flex items-center gap-1 text-base uppercase tracking-[0.15em] text-foreground hover:text-foreground/80 transition-colors px-4 py-2"
       >
         Shop
         <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
@@ -43,7 +43,7 @@ function ShopDropdown({ collections, navigate }: { collections: any[]; navigate:
           >
             <button
               onClick={() => { setOpen(false); navigate("/shop"); }}
-              className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="block w-full text-left px-4 py-2.5 text-sm uppercase tracking-[0.12em] text-foreground hover:text-foreground/80 hover:bg-muted/50 transition-colors"
             >
               All
             </button>
@@ -51,7 +51,7 @@ function ShopDropdown({ collections, navigate }: { collections: any[]; navigate:
               <button
                 key={col.node.handle}
                 onClick={() => { setOpen(false); navigate(`/shop?category=${col.node.handle}`); }}
-                className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className="block w-full text-left px-4 py-2.5 text-sm uppercase tracking-[0.12em] text-foreground hover:text-foreground/80 hover:bg-muted/50 transition-colors"
               >
                 {col.node.title}
               </button>
@@ -198,30 +198,30 @@ export default function Header() {
                       <SheetTitle className="sr-only">Navigation</SheetTitle>
                       <nav className="flex flex-col gap-1 mt-8">
                         {!isHomePage && (
-                          <button onClick={() => handleNav("/")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                          <button onClick={() => handleNav("/")} className="text-left text-base uppercase tracking-[0.15em] text-foreground hover:text-foreground/80 transition-colors py-3 border-b border-border">
                             Home
                           </button>
                         )}
                         <div>
-                          <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                          <button onClick={() => setCategoriesExpanded(!categoriesExpanded)} className="flex items-center justify-between w-full text-left text-base uppercase tracking-[0.15em] text-foreground hover:text-foreground/80 transition-colors py-3 border-b border-border">
                             Shop
                             <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${categoriesExpanded ? "rotate-180" : ""}`} />
                           </button>
                           {categoriesExpanded && (
                             <div className="flex flex-col pl-4">
-                              <button onClick={() => handleNav("/shop")} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">All</button>
+                              <button onClick={() => handleNav("/shop")} className="text-left text-base uppercase tracking-[0.1em] text-foreground hover:text-foreground/80 transition-colors py-2.5">All</button>
                               {collections.map((col) => (
-                                <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-sm uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors py-2.5">
+                                <button key={col.node.handle} onClick={() => handleNav(`/shop?category=${col.node.handle}`)} className="text-left text-base uppercase tracking-[0.1em] text-foreground hover:text-foreground/80 transition-colors py-2.5">
                                   {col.node.title}
                                 </button>
                               ))}
                             </div>
                           )}
                         </div>
-                        <button onClick={() => handleNav("/about")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                        <button onClick={() => handleNav("/about")} className="text-left text-base uppercase tracking-[0.15em] text-foreground hover:text-foreground/80 transition-colors py-3 border-b border-border">
                           About
                         </button>
-                        <button onClick={() => handleNav("/contact")} className="text-left text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors py-3 border-b border-border">
+                        <button onClick={() => handleNav("/contact")} className="text-left text-base uppercase tracking-[0.15em] text-foreground hover:text-foreground/80 transition-colors py-3 border-b border-border">
                           Contact
                         </button>
                       </nav>
