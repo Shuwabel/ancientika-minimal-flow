@@ -10,10 +10,63 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import PredictiveSearch from "@/components/PredictiveSearch";
 import { AnimatePresence, motion } from "framer-motion";
 
+function ShopDropdown({ collections, navigate }: { collections: any[]; navigate: (to: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
+      >
+        Shop
+        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 glass-heavy rounded-lg shadow-xl z-50 min-w-[160px] py-1"
+          >
+            <button
+              onClick={() => { setOpen(false); navigate("/shop"); }}
+              className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              All
+            </button>
+            {collections.map((col) => (
+              <button
+                key={col.node.handle}
+                onClick={() => { setOpen(false); navigate(`/shop?category=${col.node.handle}`); }}
+                className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                {col.node.title}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Header() {
   const totalItems = useCartStore(s => s.items.reduce((sum, i) => sum + i.quantity, 0));
   const setIsOpen = useCartStore(s => s.setIsOpen);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
@@ -65,7 +118,7 @@ export default function Header() {
 
   return (
     <>
-      <header ref={headerRef} className="sticky top-0 z-40 border-b border-border">
+      <header ref={headerRef} className="sticky top-0 z-40 border-b border-white/10">
         <AnimatePresence mode="wait">
           {searchOpen ? (
             <motion.div
@@ -74,15 +127,15 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="bg-accent h-16 flex items-center relative z-50"
+              className="glass-dark h-16 flex items-center relative z-50"
             >
               <div className="container flex items-center gap-3 h-full">
                 <Search className="h-5 w-5 text-accent-foreground/70 shrink-0" />
-                  <input
-                   ref={searchInputRef}
-                   type="text"
-                   autoFocus
-                   value={searchQuery}
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, collections..."
                   className="flex-1 bg-transparent text-accent-foreground text-sm outline-none placeholder:text-accent-foreground/50"
@@ -105,18 +158,43 @@ export default function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 h-16"
+              className="glass-heavy h-16"
             >
-              <div className="container flex h-16 items-center justify-between">
-                {/* Left: Hamburger + Logo */}
-                <div className="flex items-center gap-2">
+              <div className="container relative flex h-16 items-center justify-between">
+                {/* Left: Logo */}
+                <div className="flex items-center">
+                  <Link to="/">
+                    <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
+                  </Link>
+                </div>
+
+                {/* Center: Desktop Shop nav with dropdown */}
+                <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center">
+                  <ShopDropdown collections={collections} navigate={navigate} />
+                </nav>
+
+                {/* Right: Search + Cart + Hamburger */}
+                <div className="flex items-center gap-3">
+                  <button onClick={openSearch} className="p-2 hover:text-accent transition-colors" aria-label="Search">
+                    <Search className="h-5 w-5" />
+                  </button>
+
+                  <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
+                    <ShoppingBag className="h-5 w-5" />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-medium">
+                        {totalItems}
+                      </span>
+                    )}
+                  </button>
+
                   <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                     <SheetTrigger asChild>
                       <button className="p-2 hover:text-accent transition-colors" aria-label="Menu">
                         <Menu className="h-5 w-5" />
                       </button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-56">
+                    <SheetContent side="right" className="w-56 glass-heavy bg-background/80">
                       <SheetTitle className="sr-only">Navigation</SheetTitle>
                       <nav className="flex flex-col gap-1 mt-8">
                         {!isHomePage && (
@@ -149,26 +227,6 @@ export default function Header() {
                       </nav>
                     </SheetContent>
                   </Sheet>
-
-                  <Link to="/">
-                    <span className="text-accent text-xl tracking-wide" style={{ fontFamily: 'PorshaRichela' }}>ancientika</span>
-                  </Link>
-                </div>
-
-                {/* Right: Icons */}
-                <div className="flex items-center gap-3">
-                  <button onClick={openSearch} className="p-2 hover:text-accent transition-colors" aria-label="Search">
-                    <Search className="h-5 w-5" />
-                  </button>
-                  
-                  <button onClick={() => setIsOpen(true)} className="p-2 hover:text-accent transition-colors relative" aria-label="Cart">
-                    <ShoppingBag className="h-5 w-5" />
-                    {totalItems > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-medium">
-                        {totalItems}
-                      </span>
-                    )}
-                  </button>
                 </div>
               </div>
             </motion.div>

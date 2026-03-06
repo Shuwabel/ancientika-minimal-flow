@@ -127,7 +127,7 @@ export default function Index() {
   return (
     <div>
       {/* Sticky Newsletter Banner */}
-      <div className="sticky top-16 z-30 bg-accent text-accent-foreground py-2 overflow-hidden">
+      <div className="sticky top-16 z-30 glass-dark text-accent-foreground py-2 overflow-hidden">
         <button onClick={() => setShowPopup(true)} className="w-full animate-marquee whitespace-nowrap flex cursor-pointer">
           {[...Array(4)].map((_, i) => (
             <span key={i} className="mx-8 text-xs uppercase tracking-[0.2em]">
@@ -153,7 +153,7 @@ export default function Index() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative bg-primary text-primary-foreground rounded-lg p-8 mx-4 w-full max-w-md shadow-2xl"
+              className="relative glass-heavy text-primary-foreground rounded-2xl p-8 mx-4 w-full max-w-md shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -162,9 +162,9 @@ export default function Index() {
               >
                 <X className="h-5 w-5" />
               </button>
-              <h3 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-2">Newsletter</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] opacity-90 mb-2">Newsletter</h3>
               <p className="font-display text-2xl mb-2">Stay in the loop</p>
-              <p className="text-sm opacity-70 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
+              <p className="text-sm opacity-90 mb-6">First access to new drops, exclusive offers, and behind‑the‑scenes stories.</p>
               <form onSubmit={handleSubscribe} className="space-y-3">
                 <input
                   type="email"
@@ -216,12 +216,22 @@ export default function Index() {
 
       {/* Shop by Category */}
       <section className="py-16 md:py-20">
-        <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-base md:text-lg font-medium tracking-wide text-center mb-10">Shop by Category</h2>
+        <div className="flex items-baseline justify-between mb-6 px-4 md:px-[max(2rem,calc((100vw-1280px)/2+2rem))]">
+          <h2
+            className="uppercase font-medium tracking-[0.15em]"
+            style={{ fontSize: "clamp(14px, 1.2vw, 18px)" }}
+          >
+            Shop by Category
+          </h2>
+          <Link to="/shop" className="text-sm underline underline-offset-4 hover:text-foreground/80 transition-colors">
+            View all
+          </Link>
+        </div>
+        <div className="max-w-6xl mx-auto px-4">
           {isCollectionsLoading ? (
             <div className="flex flex-wrap justify-center gap-3 md:gap-4">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="space-y-2" style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "160px" }}>
+                <div key={i} className="space-y-2" style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "200px" }}>
                   <Skeleton className="aspect-square w-full rounded-md" />
                   <Skeleton className="h-3 w-3/4 mx-auto" />
                 </div>
@@ -236,10 +246,10 @@ export default function Index() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.06 }}
-                  style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "160px" }}
+                  style={{ width: "calc((100% - 1.5rem) / 3)", maxWidth: "200px" }}
                 >
                   <Link to={`/shop?category=${col.node.handle}`} className="block group">
-                    <div className="aspect-square rounded-md overflow-hidden bg-muted/60 transition-shadow duration-300 group-hover:shadow-md">
+                    <div className="aspect-square rounded-xl overflow-hidden glass-card transition-shadow duration-300 group-hover:shadow-lg">
                       {col.node.image ? (
                         <img src={col.node.image.url} alt={col.node.image.altText || col.node.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
@@ -270,7 +280,7 @@ export default function Index() {
       )}
 
       {/* Philosophy */}
-      <section className="bg-card">
+      <section className="glass-card">
         <div className="container py-24 max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-12 text-center">Philosophy</h2>
@@ -293,10 +303,10 @@ export default function Index() {
       </section>
 
       {/* Newsletter */}
-      <section id="newsletter" className="bg-primary text-primary-foreground">
+      <section id="newsletter" className="glass-dark text-primary-foreground">
         <div className="container py-16 text-center max-w-md mx-auto">
-          <h2 className="text-xs uppercase tracking-[0.2em] opacity-70 mb-4">Newsletter</h2>
-          <p className="text-sm opacity-80 mb-6">First access to new drops and exclusive offers.</p>
+          <h2 className="text-xs uppercase tracking-[0.2em] opacity-90 mb-4">Newsletter</h2>
+          <p className="text-sm opacity-90 mb-6">First access to new drops and exclusive offers.</p>
           <form onSubmit={handleSubscribe} className="flex gap-2">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="flex-1 bg-primary-foreground/10 border border-primary-foreground/20 rounded-sm px-4 py-2.5 text-sm placeholder:text-primary-foreground/40 focus:outline-none focus:border-primary-foreground/50" />
             <Button type="submit" variant="secondary" className="uppercase tracking-[0.1em] text-xs" disabled={subscribing}>

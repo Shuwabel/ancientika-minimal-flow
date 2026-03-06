@@ -274,7 +274,11 @@ export default function Shop() {
       <div className="container py-8">
         <div className="flex gap-8">
           {/* Desktop Sidebar */}
+<<<<<<< HEAD
           <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start">
+=======
+          <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start glass-card rounded-xl p-4">
+>>>>>>> 722201c4b3fa35ca7224fe56def0f89732a240df
             <FilterSidebar />
           </aside>
 
@@ -317,7 +321,11 @@ export default function Shop() {
                   <SelectTrigger className="w-[160px] text-xs h-8">
                     <SelectValue />
                   </SelectTrigger>
+<<<<<<< HEAD
                   <SelectContent className="bg-popover border border-border z-50">
+=======
+                  <SelectContent className="glass-heavy bg-background/80 border border-white/10 z-50">
+>>>>>>> 722201c4b3fa35ca7224fe56def0f89732a240df
                     {SORT_OPTIONS.map((opt) =>
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     )}
@@ -378,7 +386,11 @@ export default function Shop() {
 
                     {gridView === "list" ?
                 <Link to={`/product/${product.node.handle}`} state={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }} className="flex items-center gap-4 border-b border-border pb-4">
+<<<<<<< HEAD
                         <div className="w-20 h-20 shrink-0 rounded-sm overflow-hidden">
+=======
+                        <div className="w-44 h-44 shrink-0 rounded-sm overflow-hidden">
+>>>>>>> 722201c4b3fa35ca7224fe56def0f89732a240df
                           {product.node.images.edges[0]?.node.url ?
                     <img src={product.node.images.edges[0].node.url} alt={product.node.title} className="w-full h-full object-cover" loading="lazy" /> :
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>

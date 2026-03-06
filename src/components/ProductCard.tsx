@@ -91,13 +91,13 @@ export default function ProductCard({ product, aspectRatio, linkState }: { produ
                   >
                     <button
                       onClick={handleQuickView}
-                      className="h-8 w-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-110"
+                      className="h-8 w-8 rounded-full glass-heavy flex items-center justify-center transition-transform hover:scale-110"
                     >
                       <Eye className="h-4 w-4 text-white" />
                     </button>
                     <button
                       onClick={handleQuickAdd}
-                      className="h-8 w-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-110"
+                      className="h-8 w-8 rounded-full glass-heavy flex items-center justify-center transition-transform hover:scale-110"
                     >
                       <ShoppingBag className="h-4 w-4 text-white" />
                     </button>

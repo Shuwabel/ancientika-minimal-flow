@@ -109,7 +109,7 @@ export default function QuickViewModal({ product, open, onOpenChange }: QuickVie
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-lg">
+      <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-2xl glass-heavy bg-background/80">
         <div className="grid md:grid-cols-2">
           {/* Image gallery */}
           <div className="relative bg-muted">
@@ -130,9 +130,8 @@ export default function QuickViewModal({ product, open, onOpenChange }: QuickVie
                   <button
                     key={i}
                     onClick={() => setActiveImage(i)}
-                    className={`shrink-0 w-12 h-12 rounded-sm overflow-hidden border-2 transition-colors ${
-                      i === activeImage ? "border-foreground" : "border-transparent"
-                    }`}
+                    className={`shrink-0 w-12 h-12 rounded-sm overflow-hidden border-2 transition-colors ${i === activeImage ? "border-foreground" : "border-transparent"
+                      }`}
                   >
                     <img src={img.node.url} alt="" className="w-full h-full object-cover" />
                   </button>
@@ -169,11 +168,10 @@ export default function QuickViewModal({ product, open, onOpenChange }: QuickVie
                         <button
                           key={val}
                           onClick={() => setSelectedOptions(prev => ({ ...prev, [opt.name]: val }))}
-                          className={`relative h-8 min-w-[2.25rem] px-2.5 text-xs border rounded-sm transition-colors ${
-                            selectedOptions[opt.name] === val
+                          className={`relative h-8 min-w-[2.25rem] px-2.5 text-xs border rounded-sm transition-colors ${selectedOptions[opt.name] === val
                               ? "border-foreground bg-primary text-primary-foreground"
                               : "border-border hover:border-foreground"
-                          }`}
+                            }`}
                         >
                           {val}
                           {isSizeOpt && recommendedSize === val && (

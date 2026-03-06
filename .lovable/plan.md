@@ -1,71 +1,53 @@
 
 
-# Shop Page & Product Detail Enhancements
+# Fix Typography Readability + Replace Hero Brand Text with Logo
 
-## 5 Changes
+## Problem
+From the screenshots, text across the site is nearly invisible against the glassmorphism surfaces. The `muted-foreground` token and opacity values are still too weak. Additionally, the hero section needs the "ancientika" text replaced with the horizontal logo+name image.
 
-### 1. Move "Shop by Category" below "Featured" on homepage
-Swap the order of the two sections on the Index page so Featured appears first, then Shop by Category.
+## Changes
 
-### 2. List view: name on left, price on right
-In the Shop page list view, restructure the layout so the product name sits on the left and the price is pushed to the far right of the row, matching the reference image.
+### 1. Stronger foreground colors (`src/index.css`)
 
-### 3. Bold, prominent prices across the site
-Make prices more visually prominent:
-- **ProductCard**: increase price font weight to `font-semibold`
-- **ProductDetail**: increase price size and weight to `text-2xl font-semibold`
-- **Shop list view**: price displayed as `font-semibold`
+**Light mode:**
+- `--foreground`: darken from `30 10% 10%` to `30 10% 5%` (near black)
+- `--muted-foreground`: darken from `30 8% 30%` to `30 10% 20%` (much darker, clearly readable)
 
-### 4. Enrich the Product Detail page
-Following the reference image, add more useful information below the price and above the action buttons:
-- **"Price" label** above the price value (like in reference)
-- **Trust signals**: "Secure payments" and "Carbon neutral" with small icons
-- **"Tax included. Shipping calculated at checkout."** text
-- **Image thumbnails**: show all product images as small clickable thumbnails on the left side of the main image, allowing users to switch the displayed image
+**Dark mode:**
+- `--muted-foreground`: brighten from `30 10% 70%` to `30 12% 80%` (brighter white)
 
-### 5. Dynamic "Back to [collection]" button
-Replace the static "Back to shop" link with a dynamic one that reads the `category` query param from the referrer. When a user navigates from a collection (e.g., `/shop?category=bottoms`), the link says "Back to Bottoms" and navigates back to that filtered collection. Falls back to "Back to shop" linking to `/shop` when there's no referrer category.
+**Body text:**
+- Increase base font size by adding `font-size: 15px` (slightly larger than browser default 16px won't help much -- instead we'll target specific elements)
 
-## Technical Details
+**Sidebar / navigation text:**
+- Bump from `text-sm` (14px) to `text-base` (16px) for nav items in the mobile sidebar
 
-### File: `src/pages/Index.tsx`
+### 2. Replace hero "ancientika" text with logo image (`src/pages/Index.tsx`)
+- Remove the `<h1 className="font-display ...">ancientika</h1>` line
+- Replace the small icon logo (`mainLogo`) with the horizontal logo+name image (`ancientika_logo_and_name_horizontal_2.png`), sized larger (e.g., `h-28 md:h-40`)
 
-Swap the order of the "Shop by Category" section (lines 214-255) and the "Featured" section (line 258). Featured comes first, then Shop by Category.
+### 3. Boost text contrast in Header sidebar (`src/components/layout/Header.tsx`)
+- Change sidebar nav items from `text-muted-foreground` to `text-foreground` so they're clearly visible against the glass background
+- Increase sidebar nav text from `text-sm` to `text-base` for better readability
+- Same for desktop dropdown items
 
-### File: `src/pages/Shop.tsx`
+### 4. Boost text contrast in Footer (`src/components/layout/Footer.tsx`)
+- Change footer heading and link opacity from `opacity-90` to `opacity-100` (full white on dark glass)
+- Change copyright opacity from `opacity-70` to `opacity-80`
+- Increase footer link text from `text-xs` to `text-sm` for readability
 
-**List view layout (lines 380-393)**: Restructure the flex layout so the product info is `flex-1` with name on the left, and the price is a separate element aligned to the right:
+### 5. Boost text on Index page sections (`src/pages/Index.tsx`)
+- Newsletter banner: ensure text is fully opaque
+- Newsletter section: boost text opacity to 1.0
+- Philosophy section: change body text from `text-muted-foreground` to `text-foreground` with slightly reduced opacity (`opacity-80`)
 
-```tsx
-<Link to={...} className="flex items-center gap-4 border-b border-border pb-4">
-  <div className="w-20 h-20 shrink-0 ...">image</div>
-  <p className="text-sm font-medium truncate flex-1">{title}</p>
-  <p className="text-sm font-semibold shrink-0">price</p>
-</Link>
-```
+---
 
-### File: `src/components/ProductCard.tsx`
+## Summary of files to edit
 
-**Price text (around line 104)**: Change from `text-xs` to `text-xs font-semibold` for the price element.
-
-### File: `src/pages/ProductDetail.tsx`
-
-**State**: Add `selectedImageIndex` state (default 0) for image gallery.
-
-**Image section (lines 162-169)**: Replace single image with a layout containing:
-- Left column: vertical stack of clickable thumbnail images (all product images)
-- Right/main area: the currently selected large image
-
-**Price section (lines 178-181)**: Add a "Price" label above the price, make price `text-2xl font-semibold`.
-
-**New info section** below price, before options:
-- Icon row: "Secure payments" (lock icon) and "Carbon neutral" (leaf icon)
-- Small text: "Tax included. Shipping calculated at checkout."
-
-**Back button (line 158-160)**: Read `category` from URL search params or use `useLocation` to check the referrer. Pass `category` via navigation state from Shop page links, or parse from `document.referrer`. Display "Back to {Category Name}" when available.
-
-Implementation approach for dynamic back link:
-- Use `useLocation()` to read `location.state.fromCategory`
-- In Shop.tsx, pass state when linking to product: `<Link to={...} state={{ fromCategory: categoryParam, fromCategoryTitle: categoryTitle }}>`
-- In ProductDetail, read this state and render accordingly
-
+| File | What changes |
+|---|---|
+| `src/index.css` | Darken `--foreground` and `--muted-foreground` further in both modes |
+| `src/pages/Index.tsx` | Replace hero h1 text with horizontal logo image; boost text opacity across sections |
+| `src/components/layout/Header.tsx` | Use `text-foreground` instead of `text-muted-foreground` for nav items; increase font size |
+| `src/components/layout/Footer.tsx` | Full opacity on text; increase link font size to `text-sm` |
