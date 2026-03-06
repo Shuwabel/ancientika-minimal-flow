@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'PorshaRichela';
+  src: url('/fonts/PorshaRichela.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: 30 20% 96%;
+    --foreground: 30 10% 10%;
+
+    --card: 30 15% 93%;
+    --card-foreground: 30 10% 10%;
+
+    --popover: 30 20% 96%;
+    --popover-foreground: 30 10% 10%;
+
+    --primary: 30 12% 14%;
+    --primary-foreground: 30 20% 96%;
+
+    --secondary: 30 10% 88%;
+    --secondary-foreground: 30 12% 14%;
+
+    --muted: 30 8% 90%;
+    --muted-foreground: 30 6% 45%;
+
+    --accent: 25 30% 35%;
+    --accent-foreground: 30 20% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 10% 82%;
+    --input: 30 10% 82%;
+    --ring: 25 30% 35%;
+
+    --radius: 0.25rem;
+
+    --surface: 30 15% 93%;
+    --surface-foreground: 30 10% 10%;
+
+    --sidebar-background: 30 15% 93%;
+    --sidebar-foreground: 30 10% 10%;
+    --sidebar-primary: 30 12% 14%;
+    --sidebar-primary-foreground: 30 20% 96%;
+    --sidebar-accent: 30 8% 90%;
+    --sidebar-accent-foreground: 30 12% 14%;
+    --sidebar-border: 30 10% 82%;
+    --sidebar-ring: 25 30% 35%;
+  }
+
+  .dark {
+    --background: 30 10% 8%;
+    --foreground: 30 15% 90%;
+
+    --card: 30 8% 12%;
+    --card-foreground: 30 15% 90%;
+
+    --popover: 30 10% 8%;
+    --popover-foreground: 30 15% 90%;
+
+    --primary: 30 15% 90%;
+    --primary-foreground: 30 10% 8%;
+
+    --secondary: 30 6% 18%;
+    --secondary-foreground: 30 15% 90%;
+
+    --muted: 30 6% 18%;
+    --muted-foreground: 30 8% 55%;
+
+    --accent: 25 25% 45%;
+    --accent-foreground: 30 15% 90%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 22%;
+    --input: 30 6% 22%;
+    --ring: 25 25% 45%;
+
+    --surface: 30 8% 12%;
+    --surface-foreground: 30 15% 90%;
+
+    --sidebar-background: 30 8% 10%;
+    --sidebar-foreground: 30 15% 90%;
+    --sidebar-primary: 25 25% 45%;
+    --sidebar-primary-foreground: 30 15% 90%;
+    --sidebar-accent: 30 6% 15%;
+    --sidebar-accent-foreground: 30 15% 90%;
+    --sidebar-border: 30 6% 22%;
+    --sidebar-ring: 25 25% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+}
+
+.font-display {
+  font-family: 'PorshaRichela', cursive;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
